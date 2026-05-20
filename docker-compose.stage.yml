@@ -1,0 +1,11 @@
+services:
+  frontend:
+    image: spotfinder-frontend:stage
+    container_name: spotfinder-stage-frontend
+    restart: unless-stopped
+    networks:
+      - spotfinder-stage-net
+
+networks:
+  spotfinder-stage-net:
+    external: true

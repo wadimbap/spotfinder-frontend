@@ -1,0 +1,59 @@
+name: frontend-stage-pipeline
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy-stage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        run: |
+          git clone http://gitea:3000/admin/spotfinder-frontend.git .
+          git checkout ${{ gitea.sha }}
+
+      - name: Build frontend Docker image
+        run: |
+          docker build \
+            --build-arg VITE_API_BASE_URL=http://stage-api.deployflow.ru \
+            -t spotfinder-frontend:stage .
+
+      - name: Prepare stage compose file
+        run: |
+          mkdir -p /opt/apps/spotfinder/stage/frontend
+
+          docker run --rm \
+            -v "$PWD":/src:ro \
+            -v /opt/apps/spotfinder/stage/frontend:/target \
+            alpine:3.20 sh -c "cp /src/docker-compose.stage.yml /target/docker-compose.yml"
+
+      - name: Deploy frontend to stage
+        run: |
+          docker ps -a --format '{{.Names}}' \
+            | grep 'spotfinder-stage-frontend' \
+            | xargs -r docker rm -f
+
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v /opt/apps/spotfinder/stage/frontend:/work \
+            -w /work \
+            docker:27-cli sh -c "docker compose -p spotfinder-stage-frontend up -d --remove-orphans"
+
+      - name: Check frontend health
+        run: |
+          for i in $(seq 1 20); do
+            if docker run --rm --network spotfinder-stage-net curlimages/curl:8.10.1 \
+              -f http://spotfinder-stage-frontend/; then
+              echo "Stage frontend is healthy"
+              exit 0
+            fi
+
+            echo "Waiting for frontend... attempt $i"
+            sleep 3
+          done
+
+          echo "Stage frontend healthcheck failed"
+          docker logs spotfinder-stage-frontend --tail 100
+          exit 1
