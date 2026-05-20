@@ -7,8 +7,13 @@ on:
 
 jobs:
   deploy-stage:
-    runs-on: ubuntu-latest
+    runs-on: frontend-stage
     steps:
+      - name: Checkout
+        run: |
+          git clone http://gitea:3000/admin/spotfinder-frontend.git .
+          git checkout ${{ gitea.sha }}
+
       - name: Show workspace
         run: |
           pwd
