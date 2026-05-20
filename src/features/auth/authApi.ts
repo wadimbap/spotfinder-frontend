@@ -4,6 +4,7 @@ import type {
     CurrentUserResponse,
     LoginRequest,
     RegisterRequest,
+    UpdateCurrentUserRequest,
 } from "./authTypes";
 
 export const authApi = {
@@ -28,6 +29,17 @@ export const authApi = {
     async getCurrentUser(): Promise<CurrentUserResponse> {
         const response = await apiClient.get<CurrentUserResponse>(
             "/api/v1/user/me",
+        );
+
+        return response.data;
+    },
+
+    async updateCurrentUser(
+        request: UpdateCurrentUserRequest,
+    ): Promise<CurrentUserResponse> {
+        const response = await apiClient.patch<CurrentUserResponse>(
+            "/api/v1/user/me",
+            request,
         );
 
         return response.data;

@@ -1,23 +1,44 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-
-import { spotsApi } from "./spotsApi";
+import { CreateSpotPanel } from "./CreateSpotPanel";
+import { SpotDetailsPanel } from "./SpotDetailsPanel";
 import { SpotsMap } from "./SpotsMap";
-import type { SpotResponse } from "./spotsTypes";
+import { spotsApi } from "./spotsApi";
+import type { SpotMetadataResponse, SpotResponse } from "./spotsTypes";
 
-export function SpotsPage() {
+type PanelMode = "none" | "create" | "details";
+
+interface SpotsPageProps {
+    defaultMode?: "list" | "create";
+}
+
+export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
     const [spots, setSpots] = useState<SpotResponse[]>([]);
+    const [metadata, setMetadata] = useState<SpotMetadataResponse | null>(null);
+
+    const [panelMode, setPanelMode] = useState<PanelMode>(
+        defaultMode === "create" ? "create" : "none",
+    );
+
+    const [selectedSpot, setSelectedSpot] = useState<SpotResponse | null>(null);
+    const [draftLocation, setDraftLocation] = useState<[number, number] | null>(
+        null,
+    );
+
     const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
 
     useEffect(() => {
-        async function loadSpots() {
+        async function loadPageData() {
             try {
                 setErrorMessage("");
 
-                const response = await spotsApi.getApprovedSpots();
+                const [spotsResponse, metadataResponse] = await Promise.all([
+                    spotsApi.getApprovedSpots(),
+                    spotsApi.getMetadata(),
+                ]);
 
-                setSpots(response);
+                setSpots(spotsResponse);
+                setMetadata(metadataResponse);
             } catch (error) {
                 console.error(error);
                 setErrorMessage("Failed to load spots");
@@ -26,61 +47,77 @@ export function SpotsPage() {
             }
         }
 
-        void loadSpots();
+        void loadPageData();
     }, []);
+
+    function handleOpenCreatePanel() {
+        setSelectedSpot(null);
+        setDraftLocation(null);
+        setPanelMode("create");
+    }
+
+    function handleClosePanel() {
+        setPanelMode("none");
+        setSelectedSpot(null);
+        setDraftLocation(null);
+    }
+
+
+    function handleMapClick(latitude: number, longitude: number) {
+        setDraftLocation([latitude, longitude]);
+    }
+
+    function handleSpotClick(spot: SpotResponse) {
+        setSelectedSpot(spot);
+        setPanelMode("details");
+        setDraftLocation(null);
+    }
+
+    function handleSpotCreated(createdSpot: SpotResponse) {
+        setSpots((currentSpots) => [createdSpot, ...currentSpots]);
+        setSelectedSpot(createdSpot);
+        setPanelMode("details");
+        setDraftLocation(null);
+    }
 
     if (loading) {
         return <p className="page-message">Loading spots...</p>;
     }
 
     return (
-        <div className="page">
-            <div className="page-header">
-                <div>
-                    <h1>Spots</h1>
-                    <p>Approved spots</p>
-                </div>
+        <div className="spots-map-page">
+            <SpotsMap
+                spots={spots}
+                draftLocation={draftLocation}
+                creating={panelMode === "create"}
+                onMapClick={handleMapClick}
+                onSpotClick={handleSpotClick}
+            />
 
-                <Link className="primary-link-button" to="/spots/create">
+            <div className="spots-top-actions">
+                <button
+                    type="button"
+                    className="primary-link-button"
+                    onClick={handleOpenCreatePanel}
+                >
                     Add spot
-                </Link>
+                </button>
             </div>
 
-            {errorMessage && <p className="error-message">{errorMessage}</p>}
+            {errorMessage && <p className="spots-map-error">{errorMessage}</p>}
 
-            <SpotsMap spots={spots} />
-
-            {spots.length === 0 && !errorMessage && (
-                <div className="page-card">
-                    <p>No spots found.</p>
-                </div>
+            {panelMode === "create" && (
+                <CreateSpotPanel
+                    metadata={metadata}
+                    location={draftLocation}
+                    onCreated={handleSpotCreated}
+                    onCancel={handleClosePanel}
+                />
             )}
 
-            <div className="spots-grid">
-                {spots.map((spot) => (
-                    <article className="spot-card" key={spot.id}>
-                        <div className="spot-card-header">
-                            <h2>{spot.name}</h2>
-                            <span>{spot.type}</span>
-                        </div>
-
-                        {spot.description && <p>{spot.description}</p>}
-
-                        <div className="spot-meta">
-                            <span>Lat: {spot.latitude}</span>
-                            <span>Lng: {spot.longitude}</span>
-                        </div>
-
-                        {spot.features.length > 0 && (
-                            <div className="spot-features">
-                                {spot.features.map((feature) => (
-                                    <span key={feature}>{feature}</span>
-                                ))}
-                            </div>
-                        )}
-                    </article>
-                ))}
-            </div>
+            {panelMode === "details" && selectedSpot && (
+                <SpotDetailsPanel spot={selectedSpot} onClose={handleClosePanel} />
+            )}
         </div>
     );
 }
