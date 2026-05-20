@@ -39,7 +39,7 @@ jobs:
         run: |
           docker ps -a --format '{{.Names}}' \
             | grep 'spotfinder-stage-frontend' \
-            | xargs -r docker rm -f
+            | xargs -r docker rm -f || true
 
           docker compose \
             -f /opt/apps/spotfinder/stage/frontend/docker-compose.yml \
