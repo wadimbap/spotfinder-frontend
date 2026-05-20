@@ -23,32 +23,38 @@ export function ProfilePage() {
     }, []);
 
     if (loading) {
-        return <p>Loading profile...</p>;
+        return <p className="page-message">Loading profile...</p>;
     }
 
     if (!user) {
-        return <p>User not found</p>;
+        return <p className="page-message">User not found</p>;
     }
 
     return (
-        <div style={{ padding: 24 }}>
-            <h1>Profile</h1>
+        <div className="page">
+            <div className="page-card">
+                <h1>Profile</h1>
 
-            <p>
-                <strong>ID:</strong> {user.id}
-            </p>
+                <div className="info-row">
+                    <span>ID</span>
+                    <strong>{user.id}</strong>
+                </div>
 
-            <p>
-                <strong>Email:</strong> {user.email}
-            </p>
+                <div className="info-row">
+                    <span>Email</span>
+                    <strong>{user.email}</strong>
+                </div>
 
-            <p>
-                <strong>Name:</strong> {user.name}
-            </p>
+                <div className="info-row">
+                    <span>Name</span>
+                    <strong>{user.name}</strong>
+                </div>
 
-            <p>
-                <strong>Role:</strong> {user.role}
-            </p>
+                <div className="info-row">
+                    <span>Role</span>
+                    <strong>{user.role}</strong>
+                </div>
+            </div>
         </div>
     );
 }
