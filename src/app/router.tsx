@@ -6,8 +6,11 @@ import { RegisterPage } from "../features/auth/RegisterPage";
 import { ProfilePage } from "../features/profile/ProfilePage";
 import { PlaceholderPage } from "../shared/components/PlaceholderPage";
 import { RequireAuth } from "../shared/auth/RequireAuth";
+import { CreateSpotPage } from "../features/spots/CreateSpotPage";
+import { SpotsPage } from "../features/spots/SpotsPage";
 
 export const router = createBrowserRouter([
+
     {
         path: "/login",
         element: <LoginPage />,
@@ -34,16 +37,17 @@ export const router = createBrowserRouter([
             },
             {
                 path: "spots",
-                element: <PlaceholderPage title="Spots" />,
+                element: <SpotsPage />,
             },
             {
                 path: "spots/create",
-                element: <PlaceholderPage title="Create spot" />,
+                element: <CreateSpotPage />,
             },
             {
                 path: "admin/spots",
                 element: <PlaceholderPage title="Admin spots" />,
             },
+
         ],
     },
 ]);

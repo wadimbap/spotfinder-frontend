@@ -19,6 +19,6 @@ export interface AuthResponse {
 export interface CurrentUserResponse {
     id: string;
     email: string;
-    name: string;
+    displayName: string;
     role: UserRole;
 }

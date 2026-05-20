@@ -36,18 +36,13 @@ export function ProfilePage() {
                 <h1>Profile</h1>
 
                 <div className="info-row">
-                    <span>ID</span>
-                    <strong>{user.id}</strong>
-                </div>
-
-                <div className="info-row">
                     <span>Email</span>
                     <strong>{user.email}</strong>
                 </div>
 
                 <div className="info-row">
                     <span>Name</span>
-                    <strong>{user.name}</strong>
+                    <strong>{user.displayName}</strong>
                 </div>
 
                 <div className="info-row">

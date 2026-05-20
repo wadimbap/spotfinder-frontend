@@ -111,3 +111,389 @@ a:hover {
 .info-row span {
   color: #64748b;
 }
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  margin: 0;
+}
+
+.page-header p {
+  margin: 6px 0 0;
+  color: #64748b;
+}
+
+.spots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.spot-card {
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.spot-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.spot-card-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.spot-card-header span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #e0ecff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.spot-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.spot-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.spot-features span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 12px;
+}
+
+.map-wrapper {
+  width: 100%;
+  height: 420px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+}
+
+.map-container {
+  width: 100%;
+  height: 100%;
+}
+
+.primary-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 16px;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.primary-link-button:hover {
+  text-decoration: none;
+  background: #1d4ed8;
+}
+
+.form-field textarea,
+.form-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.form-field textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.field-help {
+  margin: 0 0 12px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.coordinates-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.coordinates-grid input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+}
+
+.location-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.coordinates-inline {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.coordinates-inline span {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  white-space: nowrap;
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.checkbox-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.create-spot-page {
+  position: relative;
+  height: calc(100vh - var(--app-header-height));
+  min-height: 720px;
+  overflow: hidden;
+}
+
+.create-spot-map {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.create-spot-panel {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 500;
+  width: 390px;
+  max-height: calc(100vh - 97px);
+  overflow-y: auto;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 18px;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.22);
+  backdrop-filter: blur(8px);
+}
+
+.create-spot-panel h1 {
+  margin: 0 0 20px;
+}
+
+.feature-select-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.secondary-button {
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #17202a;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.selected-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.feature-chip {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: #e0ecff;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.feature-chip:hover {
+  background: #c7ddff;
+}
+
+.selected-location-box div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.selected-location-box span {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.selected-location-box strong {
+  color: #17202a;
+  font-size: 14px;
+}
+
+/* немного уменьшим размер attribution */
+.leaflet-control-attribution {
+  font-size: 11px;
+}
+
+/* на мобильном возвращаем вертикальный layout */
+@media (max-width: 768px) {
+  .create-spot-page {
+    height: auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .create-spot-map {
+    height: 420px;
+  }
+
+  .create-spot-panel {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: auto;
+    max-height: none;
+    margin: 16px;
+  }
+}
+
+:root {
+  --app-header-height: 64px;
+}
+
+.app-layout {
+  min-height: 100vh;
+  background: #f4f6f8;
+}
+
+.app-header {
+  height: var(--app-header-height);
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 0 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  position: relative;
+  z-index: 1000;
+}
+
+.app-logo {
+  color: #17202a;
+  font-size: 20px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.app-logo:hover {
+  text-decoration: none;
+}
+
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.app-nav a {
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: #475569;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.app-nav a:hover {
+  background: #f1f5f9;
+  color: #17202a;
+  text-decoration: none;
+}
+
+.app-nav a.active {
+  background: #e0ecff;
+  color: #1d4ed8;
+}
+
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-user-role {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.logout-button {
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #17202a;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  background: #f8fafc;
+}
+
+.app-content {
+  min-height: calc(100vh - var(--app-header-height));
+}
