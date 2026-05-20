@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { authApi } from "./authApi";
 import { tokenStorage } from "../../shared/auth/tokenStorage";
@@ -31,7 +31,6 @@ export function RegisterPage() {
             });
 
             tokenStorage.setAccessToken(response.accessToken);
-
             navigate("/profile");
         } catch (error) {
             console.error(error);
@@ -42,60 +41,68 @@ export function RegisterPage() {
     }
 
     return (
-        <div style={{ padding: 24 }}>
-            <h1>Register</h1>
+        <div className="auth-page">
+            <div className="auth-card">
+                <h1>Create account</h1>
 
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(event) => setEmail(event.target.value)}
-                    />
-                </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="form-field">
+                        <label htmlFor="email">Email</label>
+                        <input
+                            id="email"
+                            type="email"
+                            placeholder="user@example.com"
+                            value={email}
+                            onChange={(event) => setEmail(event.target.value)}
+                        />
+                    </div>
 
-                <div style={{ marginTop: 12 }}>
-                    <input
-                        type="text"
-                        placeholder="Name"
-                        value={name}
-                        onChange={(event) => setName(event.target.value)}
-                    />
-                </div>
+                    <div className="form-field">
+                        <label htmlFor="name">Name</label>
+                        <input
+                            id="name"
+                            type="text"
+                            placeholder="Your name"
+                            value={name}
+                            onChange={(event) => setName(event.target.value)}
+                        />
+                    </div>
 
-                <div style={{ marginTop: 12 }}>
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                    />
-                </div>
+                    <div className="form-field">
+                        <label htmlFor="password">Password</label>
+                        <input
+                            id="password"
+                            type="password"
+                            placeholder="Password"
+                            value={password}
+                            onChange={(event) => setPassword(event.target.value)}
+                        />
+                    </div>
 
-                <div style={{ marginTop: 12 }}>
-                    <input
-                        type="password"
-                        placeholder="Password confirmation"
-                        value={passwordConfirmation}
-                        onChange={(event) =>
-                            setPasswordConfirmation(event.target.value)
-                        }
-                    />
-                </div>
+                    <div className="form-field">
+                        <label htmlFor="passwordConfirmation">Password confirmation</label>
+                        <input
+                            id="passwordConfirmation"
+                            type="password"
+                            placeholder="Repeat password"
+                            value={passwordConfirmation}
+                            onChange={(event) =>
+                                setPasswordConfirmation(event.target.value)
+                            }
+                        />
+                    </div>
 
-                {errorMessage && (
-                    <p style={{ color: "red" }}>{errorMessage}</p>
-                )}
+                    {errorMessage && <p className="error-message">{errorMessage}</p>}
 
-                <button
-                    type="submit"
-                    disabled={loading}
-                    style={{ marginTop: 16 }}
-                >
-                    {loading ? "Loading..." : "Register"}
-                </button>
-            </form>
+                    <button className="primary-button" type="submit" disabled={loading}>
+                        {loading ? "Loading..." : "Register"}
+                    </button>
+                </form>
+
+                <p className="auth-footer">
+                    Already have an account? <Link to="/login">Login</Link>
+                </p>
+            </div>
         </div>
     );
 }
