@@ -27,10 +27,10 @@ export interface CurrentUserResponse {
     email: string;
     displayName: string;
     role: UserRole;
-    activityType: ActivityType | null;
+    primaryActivity: ActivityType | null;
 }
 
 export interface UpdateCurrentUserRequest {
     displayName?: string;
-    activityType?: ActivityType;
+    primaryActivity?: ActivityType | null;
 }

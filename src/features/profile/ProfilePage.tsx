@@ -20,9 +20,7 @@ function formatEnumLabel(value: string): string {
 
 export function ProfilePage() {
     const [user, setUser] = useState<CurrentUserResponse | null>(null);
-    const [selectedActivityType, setSelectedActivityType] = useState<
-        ActivityType | ""
-    >("");
+    const [editingPrimaryActivity, setEditingPrimaryActivity] = useState(false);
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -32,9 +30,7 @@ export function ProfilePage() {
         async function loadProfile() {
             try {
                 const response = await authApi.getCurrentUser();
-
                 setUser(response);
-                setSelectedActivityType(response.activityType ?? "");
             } catch (error) {
                 console.error(error);
                 setErrorMessage("Failed to load profile");
@@ -46,24 +42,22 @@ export function ProfilePage() {
         void loadProfile();
     }, []);
 
-    async function handleSaveActivityType() {
-        if (!selectedActivityType) {
-            return;
-        }
+    async function handlePrimaryActivityChange(value: string) {
+        const primaryActivity = value ? (value as ActivityType) : null;
 
         try {
             setSaving(true);
             setErrorMessage("");
 
             const response = await authApi.updateCurrentUser({
-                activityType: selectedActivityType,
+                primaryActivity,
             });
 
             setUser(response);
-            setSelectedActivityType(response.activityType ?? "");
+            setEditingPrimaryActivity(false);
         } catch (error) {
             console.error(error);
-            setErrorMessage("Failed to update activity type");
+            setErrorMessage("Failed to update primary activity");
         } finally {
             setSaving(false);
         }
@@ -94,25 +88,21 @@ export function ProfilePage() {
                     <strong>{user.displayName}</strong>
                 </div>
 
-                <div className="profile-field">
-                    <div>
-                        <label htmlFor="activityType">Activity</label>
-                        <p>
-                            {user.activityType
-                                ? formatEnumLabel(user.activityType)
-                                : "Not selected yet"}
-                        </p>
-                    </div>
+                <div className="info-row">
+                    <span>Primary activity</span>
 
-                    <div className="profile-select-row">
+                    {editingPrimaryActivity ? (
                         <select
-                            id="activityType"
-                            value={selectedActivityType}
+                            className="inline-select"
+                            value={user.primaryActivity ?? ""}
+                            disabled={saving}
+                            autoFocus
+                            onBlur={() => setEditingPrimaryActivity(false)}
                             onChange={(event) =>
-                                setSelectedActivityType(event.target.value as ActivityType | "")
+                                void handlePrimaryActivityChange(event.target.value)
                             }
                         >
-                            <option value="">Select activity</option>
+                            <option value="">Not selected</option>
 
                             {ACTIVITY_TYPES.map((activityType) => (
                                 <option key={activityType} value={activityType}>
@@ -120,16 +110,17 @@ export function ProfilePage() {
                                 </option>
                             ))}
                         </select>
-
+                    ) : (
                         <button
                             type="button"
-                            className="secondary-button"
-                            onClick={handleSaveActivityType}
-                            disabled={!selectedActivityType || saving}
+                            className="inline-value-button"
+                            onClick={() => setEditingPrimaryActivity(true)}
                         >
-                            {saving ? "Saving..." : "Save"}
+                            {user.primaryActivity
+                                ? formatEnumLabel(user.primaryActivity)
+                                : "Not selected"}
                         </button>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>
