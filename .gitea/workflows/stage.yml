@@ -9,9 +9,6 @@ jobs:
   deploy-stage:
     runs-on: ubuntu-latest
     steps:
-      - name: Install tools
-        run: apk add --no-cache git
-
       - name: Checkout
         run: |
           git clone http://gitea:3000/admin/spotfinder-frontend.git .
