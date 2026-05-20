@@ -9,10 +9,10 @@ jobs:
   deploy-stage:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Show workspace
         run: |
-          git clone http://172.20.0.5:3000/admin/spotfinder-frontend.git . 
-          git checkout ${{ gitea.sha }}
+          pwd
+          ls -la
 
       - name: Check Docker
         run: |
@@ -49,11 +49,11 @@ jobs:
               echo "Stage frontend is healthy"
               exit 0
             fi
-          
+
             echo "Waiting for frontend... attempt $i"
             sleep 3
           done
-          
+
           echo "Stage frontend healthcheck failed"
           docker logs spotfinder-stage-frontend --tail 100
           exit 1
