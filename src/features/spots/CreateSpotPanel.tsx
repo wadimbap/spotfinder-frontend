@@ -1,7 +1,12 @@
 import { useMemo, useState } from "react";
 
 import { spotsApi } from "./spotsApi";
-import type { SpotMetadataResponse, SpotResponse } from "./spotsTypes";
+import type {
+    SpotFeature,
+    SpotMetadataResponse,
+    SpotResponse,
+    SpotType,
+} from "./spotsTypes";
 
 interface CreateSpotPanelProps {
     metadata: SpotMetadataResponse | null;
@@ -26,14 +31,16 @@ export function CreateSpotPanel({
                                 }: CreateSpotPanelProps) {
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
-    const [type, setType] = useState("");
-    const [features, setFeatures] = useState<string[]>([]);
-    const [selectedFeature, setSelectedFeature] = useState("");
+    const [type, setType] = useState<SpotType | "">("");
+    const [features, setFeatures] = useState<SpotFeature[]>([]);
+    const [selectedFeature, setSelectedFeature] = useState<SpotFeature | "">("");
+    const [photos, setPhotos] = useState<File[]>([]);
 
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const [photoUploadWarning, setPhotoUploadWarning] = useState("");
 
-    const availableFeatures = useMemo(() => {
+    const availableFeatures = useMemo<SpotFeature[]>(() => {
         if (!metadata) {
             return [];
         }
@@ -41,9 +48,9 @@ export function CreateSpotPanel({
         return metadata.features.filter((feature) => !features.includes(feature));
     }, [metadata, features]);
 
-    const effectiveType = type || metadata?.types[0] || "";
+    const effectiveType: SpotType | "" = type || metadata?.types[0] || "";
 
-    const effectiveSelectedFeature =
+    const effectiveSelectedFeature: SpotFeature | "" =
         selectedFeature && availableFeatures.includes(selectedFeature)
             ? selectedFeature
             : availableFeatures[0] ?? "";
@@ -64,10 +71,45 @@ export function CreateSpotPanel({
         setSelectedFeature("");
     }
 
-    function handleRemoveFeature(feature: string) {
+    function handleRemoveFeature(feature: SpotFeature) {
         setFeatures((currentFeatures) =>
             currentFeatures.filter((item) => item !== feature),
         );
+    }
+
+    function handleTypeChange(value: string) {
+        setType(value as SpotType);
+    }
+
+    function handleSelectedFeatureChange(value: string) {
+        setSelectedFeature(value as SpotFeature);
+    }
+
+    function handlePhotosChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const selectedFiles = Array.from(event.target.files ?? []);
+        setPhotos(selectedFiles.slice(0, 5));
+        setPhotoUploadWarning("");
+    }
+
+    async function uploadPhotos(spotId: string) {
+        if (photos.length === 0) {
+            return;
+        }
+
+        let hasFailedUploads = false;
+
+        for (const photo of photos) {
+            try {
+                await spotsApi.uploadSpotPhoto(spotId, photo);
+            } catch (error) {
+                console.error(error);
+                hasFailedUploads = true;
+            }
+        }
+
+        if (hasFailedUploads) {
+            setPhotoUploadWarning("Spot created, but some photos failed to upload");
+        }
     }
 
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -91,6 +133,7 @@ export function CreateSpotPanel({
         try {
             setLoading(true);
             setErrorMessage("");
+            setPhotoUploadWarning("");
 
             const createdSpot = await spotsApi.createSpot({
                 name: name.trim(),
@@ -100,6 +143,8 @@ export function CreateSpotPanel({
                 type: effectiveType,
                 features,
             });
+
+            await uploadPhotos(createdSpot.id);
 
             onCreated(createdSpot);
         } catch (error) {
@@ -148,7 +193,7 @@ export function CreateSpotPanel({
                     <select
                         id="type"
                         value={effectiveType}
-                        onChange={(event) => setType(event.target.value)}
+                        onChange={(event) => handleTypeChange(event.target.value)}
                         required
                     >
                         {metadata?.types.map((spotType) => (
@@ -179,7 +224,9 @@ export function CreateSpotPanel({
                         <select
                             id="feature"
                             value={effectiveSelectedFeature}
-                            onChange={(event) => setSelectedFeature(event.target.value)}
+                            onChange={(event) =>
+                                handleSelectedFeatureChange(event.target.value)
+                            }
                             disabled={availableFeatures.length === 0}
                         >
                             {availableFeatures.map((feature) => (
@@ -215,7 +262,32 @@ export function CreateSpotPanel({
                     )}
                 </div>
 
+                <div className="form-field">
+                    <label htmlFor="photos">Photos</label>
+                    <input
+                        id="photos"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        multiple
+                        onChange={handlePhotosChange}
+                    />
+
+                    <p className="field-help">You can upload up to 5 photos.</p>
+
+                    {photos.length > 0 && (
+                        <div className="selected-photos-list">
+                            {photos.map((photo) => (
+                                <span key={`${photo.name}-${photo.size}`}>{photo.name}</span>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
                 {errorMessage && <p className="error-message">{errorMessage}</p>}
+
+                {photoUploadWarning && (
+                    <p className="error-message">{photoUploadWarning}</p>
+                )}
 
                 <button className="primary-button" type="submit" disabled={loading}>
                     {loading ? "Creating..." : "Create spot"}

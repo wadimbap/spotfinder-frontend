@@ -1,11 +1,24 @@
-export type SpotTypeCode = string;
+export type SpotType = "STREET" | "SKATEPARK";
 
-export type SpotFeatureCode = string;
-
-export interface SpotMetadataResponse {
-    types: SpotTypeCode[];
-    features: SpotFeatureCode[];
-}
+export type SpotFeature =
+    | "FLAT"
+    | "RAIL"
+    | "LEDGE"
+    | "STAIRS"
+    | "GAP"
+    | "BANK"
+    | "MANUAL_PAD"
+    | "MINI_RAMP"
+    | "HALFPIPE"
+    | "QUARTER_PIPE"
+    | "FUNBOX"
+    | "PYRAMID"
+    | "BOWL"
+    | "CURB"
+    | "WALLRIDE"
+    | "LIGHTING"
+    | "COVERED"
+    | "OTHER";
 
 export interface SpotResponse {
     id: string;
@@ -13,9 +26,12 @@ export interface SpotResponse {
     description: string | null;
     latitude: number;
     longitude: number;
-    type: SpotTypeCode;
-    features: SpotFeatureCode[];
+    type: SpotType;
+    features: SpotFeature[];
     approved: boolean;
+    createdByUserId: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface CreateSpotRequest {
@@ -23,6 +39,21 @@ export interface CreateSpotRequest {
     description: string | null;
     latitude: number;
     longitude: number;
-    type: SpotTypeCode;
-    features: SpotFeatureCode[];
+    type: SpotType;
+    features: SpotFeature[];
+}
+
+export interface SpotMetadataResponse {
+    types: SpotType[];
+    features: SpotFeature[];
+}
+
+export interface SpotPhotoResponse {
+    id: string;
+    spotId: string;
+    originalFilename: string;
+    contentType: string;
+    sizeBytes: number;
+    createdByUserId: string;
+    createdAt: string;
 }
