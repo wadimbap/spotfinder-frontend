@@ -11,7 +11,7 @@ export const adminSpotsApi = {
     },
 
     async approveSpot(spotId: string): Promise<SpotResponse> {
-        const response = await apiClient.patch<SpotResponse>(
+        const response = await apiClient.post<SpotResponse>(
             `/api/v1/admin/spots/${spotId}/approve`,
         );
 
@@ -19,6 +19,6 @@ export const adminSpotsApi = {
     },
 
     async rejectSpot(spotId: string): Promise<void> {
-        await apiClient.patch(`/api/v1/admin/spots/${spotId}/reject`);
+        await apiClient.post(`/api/v1/admin/spots/${spotId}/reject`);
     },
 };
