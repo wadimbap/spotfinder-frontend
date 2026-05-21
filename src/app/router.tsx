@@ -5,8 +5,8 @@ import { LoginPage } from "../features/auth/LoginPage";
 import { RegisterPage } from "../features/auth/RegisterPage";
 import { ProfilePage } from "../features/profile/ProfilePage";
 import { SpotsPage } from "../features/spots/SpotsPage";
-import { PlaceholderPage } from "../shared/components/PlaceholderPage";
 import { RequireAuth } from "../shared/auth/RequireAuth";
+import { AdminSpotsPage } from "../features/admin/AdminSpotsPage";
 
 export const router = createBrowserRouter([
     {
@@ -43,7 +43,7 @@ export const router = createBrowserRouter([
             },
             {
                 path: "admin/spots",
-                element: <PlaceholderPage title="Admin spots" />,
+                element: <AdminSpotsPage />,
             },
         ],
     },
