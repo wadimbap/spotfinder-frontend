@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { getSpotMarkerIcon } from "../../shared/map/spotMarkerIcon";
 import {
     MapContainer,
     Marker,
@@ -135,6 +136,7 @@ export function SpotsMap({
                 <Marker
                     key={spot.id}
                     position={[spot.latitude, spot.longitude]}
+                    icon={getSpotMarkerIcon(spot.approved)}
                     eventHandlers={{
                         click: () => onSpotClick(spot),
                     }}

@@ -948,3 +948,37 @@ a:hover {
   font-weight: 800;
   transform: translateX(-50%);
 }
+
+.spot-marker-icon {
+  background: transparent;
+  border: 0;
+}
+
+.spot-marker-pin {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid #ffffff;
+  border-radius: 50% 50% 50% 0;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.35);
+  transform: rotate(-45deg);
+}
+
+.spot-marker-pin::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  top: 7px;
+  left: 7px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.spot-marker-pin-approved {
+  background: #2563eb;
+}
+
+.spot-marker-pin-pending {
+  background: #dc2626;
+}
