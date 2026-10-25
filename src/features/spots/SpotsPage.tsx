@@ -138,7 +138,10 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
             )}
 
             {panelMode === "details" && selectedSpot && (
-                <SpotDetailsPanel key={selectedSpot.id} spot={selectedSpot} onClose={handleClosePanel} />
+                <SpotDetailsPanel key={selectedSpot.id} spot={selectedSpot} onClose={handleClosePanel} onDeleted={(id) => {
+                    setSpots((current) => current.filter((spot) => spot.id !== id));
+                    setSelectedSpot((current) => current?.id === id ? null : current);
+                }} />
             )}
         </div>
     );

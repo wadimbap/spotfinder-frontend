@@ -2,6 +2,10 @@ import { apiClient } from "../../shared/api/apiClient";
 import type { CreateSpotRequest, SpotResponse } from "../spots/spotsTypes";
 
 export const adminSpotsApi = {
+    async deleteSpot(spotId: string): Promise<void> {
+        await apiClient.delete(`/api/v1/admin/spots/${spotId}`);
+    },
+
     async getSpot(spotId: string): Promise<SpotResponse> {
         const response = await apiClient.get<SpotResponse>(`/api/v1/admin/spots/${spotId}`);
         return response.data;

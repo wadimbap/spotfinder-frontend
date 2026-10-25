@@ -38,7 +38,7 @@ export function AdminSpotsPage() {
 
     function completed(id: string) {
         setSpots((current) => current.filter((spot) => spot.id !== id));
-        setSelected(null);
+        setSelected((current) => current?.id === id ? null : current);
     }
 
     return <div className="page">
@@ -59,7 +59,7 @@ export function AdminSpotsPage() {
             </article>)}
         </div> : <p className="page-card">No pending spots.</p>)}
         {selected && <SpotDialog onClose={() => setSelected(null)}>
-            <SpotDetailsPanel key={selected.id} source="admin" spot={selected} onClose={() => setSelected(null)} onModerated={completed} />
+            <SpotDetailsPanel key={selected.id} source="admin" spot={selected} onClose={() => setSelected(null)} onModerated={completed} onDeleted={completed} />
         </SpotDialog>}
     </div>;
 }

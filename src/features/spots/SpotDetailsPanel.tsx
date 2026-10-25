@@ -7,19 +7,21 @@ import { SpotPhotos } from "./SpotPhotos";
 import { getApiError } from "../../shared/api/apiError";
 import { adminSpotsApi } from "../admin/adminSpotsApi";
 import { ModerationActions } from "../admin/ModerationActions";
+import { DeleteSpotAction } from "../admin/DeleteSpotAction";
 
 interface SpotDetailsPanelProps {
     spot: SpotResponse;
     onClose: () => void;
     source?: "public" | "own" | "admin";
     onModerated?: (spotId: string) => void;
+    onDeleted?: (spotId: string) => void;
 }
 
 function formatLabel(value: string) {
     return value.toLowerCase().split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
 }
 
-export function SpotDetailsPanel({ spot: initialSpot, onClose, source = "public", onModerated }: SpotDetailsPanelProps) {
+export function SpotDetailsPanel({ spot: initialSpot, onClose, source = "public", onModerated, onDeleted }: SpotDetailsPanelProps) {
     const [spot, setSpot] = useState(initialSpot);
     const [loading, setLoading] = useState(initialSpot.approved || source !== "public");
     const [error, setError] = useState("");
@@ -75,6 +77,7 @@ export function SpotDetailsPanel({ spot: initialSpot, onClose, source = "public"
             <SpotPhotos key={spot.id} spot={spot} currentUser={currentUser} />
             {source === "admin" && !spot.approved && (currentUser?.role === "MODERATOR" || currentUser?.role === "ADMIN")
                 && <ModerationActions spotId={spot.id} onDone={onModerated ?? (() => onClose())} />}
+            <DeleteSpotAction spotId={spot.id} currentUser={currentUser} onDeleted={onDeleted ?? (() => onClose())} />
         </>}
     </section>;
 }
