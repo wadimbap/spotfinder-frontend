@@ -1,0 +1,11 @@
+.app-layout .panel-close-button { flex-shrink: 0; }
+.app-layout .spots-panel-header > div { min-width: 0; }
+.app-layout .spots-panel-header h1 { overflow-wrap: anywhere; }
+
+@media (max-width: 768px) {
+    html:root { --app-header-height: 112px; }
+    .app-layout .app-header { height: var(--app-header-height); min-height: var(--app-header-height); flex-wrap: wrap; align-content: center; gap: 8px 12px; padding: 8px 12px; }
+    .app-layout .app-header-actions { margin-left: auto; }
+    .app-layout .app-nav { order: 3; flex: 0 0 100%; justify-content: center; flex-wrap: nowrap; gap: 4px; }
+    .app-layout .app-nav a { padding: 7px 6px; white-space: nowrap; font-size: 13px; }
+}

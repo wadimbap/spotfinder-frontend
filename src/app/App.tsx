@@ -5,6 +5,7 @@ import { authApi } from "../features/auth/authApi";
 import type { CurrentUserResponse } from "../features/auth/authTypes";
 import { tokenStorage } from "../shared/auth/tokenStorage";
 import { getApiError, getApiStatus } from "../shared/api/apiError";
+import "./layout.css";
 
 export function App() {
     const navigate = useNavigate();

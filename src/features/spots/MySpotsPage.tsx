@@ -36,7 +36,7 @@ export function MySpotsPage() {
     return (
         <div className="page">
             <div className="page-header"><div><h1>My spots</h1><p>Your approved spots and submissions awaiting moderation.</p></div>
-                <Link className="primary-link-button" to="/spots">Add spot</Link></div>
+                <Link className="primary-link-button" to="/spots?create=pending">Add spot</Link></div>
             {loading && <p role="status">Loading your spots...</p>}
             {error && <div role="alert"><p className="error-message">{error}</p>
                 <button className="secondary-button" onClick={() => setReload((value) => value + 1)}>Retry</button></div>}

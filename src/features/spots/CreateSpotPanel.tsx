@@ -12,9 +12,11 @@ interface CreateSpotPanelProps {
     onCreated: (spot: SpotResponse) => void;
     onCancel: () => void;
     createApproved?: boolean;
+    onBusyChange?: (busy: boolean) => void;
+    onPersisted?: (spot: SpotResponse) => void;
 }
 
-export function CreateSpotPanel({ metadata, location, onCreated, onCancel, createApproved = false }: CreateSpotPanelProps) {
+export function CreateSpotPanel({ metadata, location, onCreated, onCancel, createApproved = false, onBusyChange, onPersisted }: CreateSpotPanelProps) {
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [type, setType] = useState<SpotType | "">("");
@@ -46,15 +48,16 @@ export function CreateSpotPanel({ metadata, location, onCreated, onCancel, creat
             latitude: location[0], longitude: location[1], type: effectiveType, features };
         const validation = validateSpot(request) || photos.map(validatePhoto).filter(Boolean).join(" ");
         if (validation) { setError(validation); return; }
-        inFlight.current = true; setLoading(true); setError("");
+        inFlight.current = true; setLoading(true); setError(""); onBusyChange?.(true);
         try {
             const saved = created ?? await (createApproved ? adminSpotsApi.createApprovedSpot(request) : spotsApi.createSpot(request));
             setCreated(saved);
+            onPersisted?.(saved);
             await finishPhotos(saved);
         } catch (error) {
             setError(getApiError(error, "Failed to create spot."));
         } finally {
-            inFlight.current = false; setLoading(false);
+            inFlight.current = false; setLoading(false); onBusyChange?.(false);
         }
     }
 

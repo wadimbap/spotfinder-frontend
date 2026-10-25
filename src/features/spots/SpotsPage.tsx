@@ -19,11 +19,14 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
     const [creatingApproved, setCreatingApproved] = useState(searchParams.get("create") === "approved");
     const [canModerate, setCanModerate] = useState(false);
     const [accountLoading, setAccountLoading] = useState(true);
+    const [creationBusy, setCreationBusy] = useState(false);
+    const [creationPersisted, setCreationPersisted] = useState(false);
+    const [reload, setReload] = useState(0);
     const [spots, setSpots] = useState<SpotResponse[]>([]);
     const [metadata, setMetadata] = useState<SpotMetadataResponse | null>(null);
 
     const [panelMode, setPanelMode] = useState<PanelMode>(
-        defaultMode === "create" || searchParams.get("create") === "approved" ? "create" : "none",
+        defaultMode === "create" || ["approved", "pending"].includes(searchParams.get("create") ?? "") ? "create" : "none",
     );
 
     const [selectedSpot, setSelectedSpot] = useState<SpotResponse | null>(null);
@@ -44,36 +47,46 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
     }, []);
 
     useEffect(() => {
+        let active = true;
         async function loadPageData() {
+            setLoading(true);
             try {
                 setErrorMessage("");
 
-                const [spotsResponse, metadataResponse] = await Promise.all([
+                const [spotsResponse, metadataResponse] = await Promise.allSettled([
                     spotsApi.getApprovedSpots(),
                     spotsApi.getMetadata(),
                 ]);
 
-                setSpots(spotsResponse);
-                setMetadata(metadataResponse);
+                if (!active) return;
+                const errors: string[] = [];
+                if (spotsResponse.status === "fulfilled") setSpots(spotsResponse.value);
+                else errors.push(getApiError(spotsResponse.reason, "Failed to load spots."));
+                if (metadataResponse.status === "fulfilled") setMetadata(metadataResponse.value);
+                else errors.push(getApiError(metadataResponse.reason, "Failed to load spot types and features."));
+                setErrorMessage(errors.join(" "));
             } catch (error) {
-                console.error(error);
-                setErrorMessage(getApiError(error, "Failed to load spots."));
+                if (active) setErrorMessage(getApiError(error, "Failed to load spots."));
             } finally {
-                setLoading(false);
+                if (active) setLoading(false);
             }
         }
 
         void loadPageData();
-    }, []);
+        return () => { active = false; };
+    }, [reload]);
 
     function handleOpenCreatePanel(approved = false) {
         setCreatingApproved(approved);
+        setCreationPersisted(false);
         setSelectedSpot(null);
         setDraftLocation(null);
         setPanelMode("create");
     }
 
     function handleClosePanel() {
+        if (creationBusy) return;
+        setCreationPersisted(false);
         setPanelMode("none");
         setSelectedSpot(null);
         setDraftLocation(null);
@@ -85,13 +98,14 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
     }
 
     function handleSpotClick(spot: SpotResponse) {
+        if (panelMode === "create") return;
         setSelectedSpot(spot);
         setPanelMode("details");
         setDraftLocation(null);
     }
 
     function handleSpotCreated(createdSpot: SpotResponse) {
-        setSpots((currentSpots) => [createdSpot, ...currentSpots]);
+        setSpots((currentSpots) => [createdSpot, ...currentSpots.filter((spot) => spot.id !== createdSpot.id)]);
         setSelectedSpot(createdSpot);
         setPanelMode("details");
         setDraftLocation(null);
@@ -106,7 +120,7 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
             <SpotsMap
                 spots={spots}
                 draftLocation={draftLocation}
-                creating={panelMode === "create"}
+                creating={panelMode === "create" && !creationBusy && !creationPersisted}
                 onMapClick={handleMapClick}
                 onSpotClick={handleSpotClick}
             />
@@ -115,21 +129,26 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
                 <button
                     type="button"
                     className="primary-link-button"
+                    disabled={panelMode === "create"}
                     onClick={() => handleOpenCreatePanel()}
                 >
                     Add spot
                 </button>
-                {canModerate && <button type="button" className="secondary-button" onClick={() => handleOpenCreatePanel(true)}>Create approved spot</button>}
+                {canModerate && <button type="button" className="secondary-button" disabled={panelMode === "create"} onClick={() => handleOpenCreatePanel(true)}>Create approved spot</button>}
             </div>
 
-            {errorMessage && <p className="spots-map-error">{errorMessage}</p>}
+            {errorMessage && <div className="spots-map-error" role="alert">{errorMessage}
+                <button className="secondary-button" disabled={panelMode === "create"} onClick={() => setReload((value) => value + 1)}>Retry map data</button></div>}
 
             {panelMode === "create" && creatingApproved && !canModerate && <p className="spots-map-error" role="alert">
-                {accountLoading ? "Checking permissions..." : "Creating an approved spot requires MODERATOR or ADMIN permissions."}</p>}
+                {accountLoading ? "Checking permissions..." : "Creating an approved spot requires MODERATOR or ADMIN permissions."}
+                <button className="secondary-button" onClick={handleClosePanel}>Back to map</button></p>}
             {panelMode === "create" && (!creatingApproved || canModerate) && (
                 <CreateSpotPanel
                     key={creatingApproved ? "approved" : "pending"}
                     createApproved={creatingApproved}
+                    onBusyChange={setCreationBusy}
+                    onPersisted={(spot) => { setCreationPersisted(true); setDraftLocation([spot.latitude, spot.longitude]); }}
                     metadata={metadata}
                     location={draftLocation}
                     onCreated={handleSpotCreated}
