@@ -4,9 +4,12 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { authApi } from "../features/auth/authApi";
 import type { CurrentUserResponse } from "../features/auth/authTypes";
 import { tokenStorage } from "../shared/auth/tokenStorage";
+import { getApiError, getApiStatus } from "../shared/api/apiError";
 
 export function App() {
     const navigate = useNavigate();
+    const [sessionError, setSessionError] = useState("");
+    const [retry, setRetry] = useState(0);
 
     const [currentUser, setCurrentUser] = useState<CurrentUserResponse | null>(
         null,
@@ -16,19 +19,25 @@ export function App() {
         currentUser?.role === "ADMIN" || currentUser?.role === "MODERATOR";
 
     useEffect(() => {
+        let active = true;
         async function loadCurrentUser() {
             try {
                 const response = await authApi.getCurrentUser();
-                setCurrentUser(response);
+                if (active) { setCurrentUser(response); setSessionError(""); }
             } catch (error) {
-                console.error(error);
-                tokenStorage.removeAccessToken();
-                navigate("/login");
+                if (!active) return;
+                if (getApiStatus(error) === 401) {
+                    tokenStorage.removeAccessToken();
+                    navigate("/login");
+                } else {
+                    setSessionError(getApiError(error, "Failed to load your account."));
+                }
             }
         }
 
         void loadCurrentUser();
-    }, [navigate]);
+        return () => { active = false; };
+    }, [navigate, retry]);
 
     function handleLogout() {
         tokenStorage.removeAccessToken();
@@ -64,6 +73,8 @@ export function App() {
             </header>
 
             <main className="app-content">
+                {sessionError && <div className="page" role="alert"><p className="error-message">{sessionError}</p>
+                    <button className="secondary-button" onClick={() => setRetry((value) => value + 1)}>Retry account</button></div>}
                 <Outlet />
             </main>
         </div>
