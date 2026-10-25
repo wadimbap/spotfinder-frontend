@@ -1,7 +1,12 @@
 import { apiClient } from "../../shared/api/apiClient";
-import type { SpotResponse } from "../spots/spotsTypes";
+import type { CreateSpotRequest, SpotResponse } from "../spots/spotsTypes";
 
 export const adminSpotsApi = {
+    async createApprovedSpot(request: CreateSpotRequest): Promise<SpotResponse> {
+        const response = await apiClient.post<SpotResponse>("/api/v1/admin/spots", request);
+        return response.data;
+    },
+
     async getPendingSpots(): Promise<SpotResponse[]> {
         const response = await apiClient.get<SpotResponse[]>(
             "/api/v1/admin/spots/pending",

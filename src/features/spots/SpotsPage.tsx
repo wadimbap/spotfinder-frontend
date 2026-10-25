@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { authApi } from "../auth/authApi";
+import { getApiError } from "../../shared/api/apiError";
 import { CreateSpotPanel } from "./CreateSpotPanel";
 import { SpotDetailsPanel } from "./SpotDetailsPanel";
 import { SpotsMap } from "./SpotsMap";
@@ -12,11 +15,15 @@ interface SpotsPageProps {
 }
 
 export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
+    const [searchParams] = useSearchParams();
+    const [creatingApproved, setCreatingApproved] = useState(searchParams.get("create") === "approved");
+    const [canModerate, setCanModerate] = useState(false);
+    const [accountLoading, setAccountLoading] = useState(true);
     const [spots, setSpots] = useState<SpotResponse[]>([]);
     const [metadata, setMetadata] = useState<SpotMetadataResponse | null>(null);
 
     const [panelMode, setPanelMode] = useState<PanelMode>(
-        defaultMode === "create" ? "create" : "none",
+        defaultMode === "create" || searchParams.get("create") === "approved" ? "create" : "none",
     );
 
     const [selectedSpot, setSelectedSpot] = useState<SpotResponse | null>(null);
@@ -26,6 +33,15 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
 
     const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
+
+    useEffect(() => {
+        let active = true;
+        authApi.getCurrentUser().then((user) => {
+            if (active) setCanModerate(user.role === "ADMIN" || user.role === "MODERATOR");
+        }).catch(() => { /* Regular spot creation remains available if the account request fails. */ })
+            .finally(() => { if (active) setAccountLoading(false); });
+        return () => { active = false; };
+    }, []);
 
     useEffect(() => {
         async function loadPageData() {
@@ -41,7 +57,7 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
                 setMetadata(metadataResponse);
             } catch (error) {
                 console.error(error);
-                setErrorMessage("Failed to load spots");
+                setErrorMessage(getApiError(error, "Failed to load spots."));
             } finally {
                 setLoading(false);
             }
@@ -50,7 +66,8 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
         void loadPageData();
     }, []);
 
-    function handleOpenCreatePanel() {
+    function handleOpenCreatePanel(approved = false) {
+        setCreatingApproved(approved);
         setSelectedSpot(null);
         setDraftLocation(null);
         setPanelMode("create");
@@ -98,16 +115,21 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
                 <button
                     type="button"
                     className="primary-link-button"
-                    onClick={handleOpenCreatePanel}
+                    onClick={() => handleOpenCreatePanel()}
                 >
                     Add spot
                 </button>
+                {canModerate && <button type="button" className="secondary-button" onClick={() => handleOpenCreatePanel(true)}>Create approved spot</button>}
             </div>
 
             {errorMessage && <p className="spots-map-error">{errorMessage}</p>}
 
-            {panelMode === "create" && (
+            {panelMode === "create" && creatingApproved && !canModerate && <p className="spots-map-error" role="alert">
+                {accountLoading ? "Checking permissions..." : "Creating an approved spot requires MODERATOR or ADMIN permissions."}</p>}
+            {panelMode === "create" && (!creatingApproved || canModerate) && (
                 <CreateSpotPanel
+                    key={creatingApproved ? "approved" : "pending"}
+                    createApproved={creatingApproved}
                     metadata={metadata}
                     location={draftLocation}
                     onCreated={handleSpotCreated}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { adminSpotsApi } from "./adminSpotsApi";
 import type { SpotResponse } from "../spots/spotsTypes";
@@ -83,6 +84,7 @@ export function AdminSpotsPage() {
                     <h1>Spot moderation</h1>
                     <p>Review and approve pending spots</p>
                 </div>
+                <Link className="primary-link-button" to="/spots?create=approved">Create approved spot</Link>
             </div>
 
             {errorMessage && <p className="error-message">{errorMessage}</p>}
