@@ -1,391 +1,67 @@
 import { useEffect, useState } from "react";
-
 import { authApi } from "../auth/authApi";
+import type { CurrentUserResponse } from "../auth/authTypes";
 import { spotsApi } from "./spotsApi";
-import type { SpotPhotoResponse, SpotResponse } from "./spotsTypes";
+import type { SpotResponse } from "./spotsTypes";
+import { SpotPhotos } from "./SpotPhotos";
+import { getApiError } from "../../shared/api/apiError";
 
 interface SpotDetailsPanelProps {
     spot: SpotResponse;
     onClose: () => void;
 }
 
-interface PhotoPreview {
-    photo: SpotPhotoResponse;
-    url: string;
-}
-
-function formatEnumLabel(value: string): string {
-    return value
-        .toLowerCase()
-        .split("_")
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(" ");
+function formatLabel(value: string) {
+    return value.toLowerCase().split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
 }
 
 export function SpotDetailsPanel({ spot: initialSpot, onClose }: SpotDetailsPanelProps) {
     const [spot, setSpot] = useState(initialSpot);
-    const [spotLoading, setSpotLoading] = useState(initialSpot.approved);
-    const [spotError, setSpotError] = useState("");
-    const [photoPreviews, setPhotoPreviews] = useState<PhotoPreview[]>([]);
-    const [photosLoading, setPhotosLoading] = useState(true);
-    const [photosError, setPhotosError] = useState("");
-
-    const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
-
-    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-    const [uploading, setUploading] = useState(false);
-    const [uploadError, setUploadError] = useState("");
-
-    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
-    const canUploadPhotos = currentUserId === spot.createdByUserId;
+    const [loading, setLoading] = useState(initialSpot.approved);
+    const [error, setError] = useState("");
+    const [retry, setRetry] = useState(0);
+    const [currentUser, setCurrentUser] = useState<CurrentUserResponse | null>(null);
+    const [accountError, setAccountError] = useState("");
 
     useEffect(() => {
-        if (!initialSpot.approved) {
-            return;
-        }
-
         let active = true;
+        authApi.getCurrentUser().then((response) => { if (active) { setCurrentUser(response); setAccountError(""); } })
+            .catch((error) => { if (active) setAccountError(getApiError(error, "Failed to load your account. Photo actions are unavailable.")); });
+        return () => { active = false; };
+    }, [retry]);
 
-        async function loadSpot() {
+    useEffect(() => {
+        if (!initialSpot.approved) return;
+        let active = true;
+        async function load() {
+            setLoading(true); setError("");
             try {
                 const response = await spotsApi.getApprovedSpot(initialSpot.id);
-
-                if (active) {
-                    setSpot(response);
-                }
+                if (active) setSpot(response);
             } catch (error) {
-                console.error(error);
-
-                if (active) {
-                    setSpotError("Failed to load spot. It may no longer be available.");
-                }
+                if (active) setError(getApiError(error, "Failed to load spot. It may no longer be available."));
             } finally {
-                if (active) {
-                    setSpotLoading(false);
-                }
+                if (active) setLoading(false);
             }
         }
+        void load();
+        return () => { active = false; };
+    }, [initialSpot.id, initialSpot.approved, retry]);
 
-        void loadSpot();
-
-        return () => {
-            active = false;
-        };
-    }, [initialSpot.id, initialSpot.approved]);
-
-    useEffect(() => {
-        async function loadCurrentUser() {
-            try {
-                const user = await authApi.getCurrentUser();
-                setCurrentUserId(user.id);
-            } catch (error) {
-                console.error(error);
-            }
-        }
-
-        void loadCurrentUser();
-    }, []);
-
-    useEffect(() => {
-        if (spotLoading || spotError) {
-            return;
-        }
-
-        let active = true;
-        const objectUrls: string[] = [];
-
-        async function loadPhotos() {
-            try {
-                setPhotosLoading(true);
-                setPhotosError("");
-
-                const photos = await spotsApi.getSpotPhotos(spot.id);
-
-                const previews = await Promise.all(
-                    photos.map(async (photo) => {
-                        const blob = await spotsApi.getSpotPhotoContent(spot.id, photo.id);
-                        const url = URL.createObjectURL(blob);
-
-                        objectUrls.push(url);
-
-                        return {
-                            photo,
-                            url,
-                        };
-                    }),
-                );
-
-                if (active) {
-                    setPhotoPreviews(previews);
-                }
-            } catch (error) {
-                console.error(error);
-
-                if (active) {
-                    setPhotosError("Failed to load photos");
-                }
-            } finally {
-                if (active) {
-                    setPhotosLoading(false);
-                }
-            }
-        }
-
-        void loadPhotos();
-
-        return () => {
-            active = false;
-            objectUrls.forEach((url) => URL.revokeObjectURL(url));
-        };
-    }, [spot.id, spotLoading, spotError]);
-
-    async function reloadPhotos() {
-        const oldUrls = photoPreviews.map((preview) => preview.url);
-
-        try {
-            setPhotosLoading(true);
-            setPhotosError("");
-
-            const photos = await spotsApi.getSpotPhotos(spot.id);
-
-            const previews = await Promise.all(
-                photos.map(async (photo) => {
-                    const blob = await spotsApi.getSpotPhotoContent(spot.id, photo.id);
-                    const url = URL.createObjectURL(blob);
-
-                    return {
-                        photo,
-                        url,
-                    };
-                }),
-            );
-
-            oldUrls.forEach((url) => URL.revokeObjectURL(url));
-            setPhotoPreviews(previews);
-        } catch (error) {
-            console.error(error);
-            setPhotosError("Failed to load photos");
-        } finally {
-            setPhotosLoading(false);
-        }
-    }
-
-    function handleFilesChange(event: React.ChangeEvent<HTMLInputElement>) {
-        const files = Array.from(event.target.files ?? []);
-        setSelectedFiles(files.slice(0, 5));
-        setUploadError("");
-    }
-
-    async function handleUploadPhotos() {
-        if (selectedFiles.length === 0) {
-            return;
-        }
-
-        try {
-            setUploading(true);
-            setUploadError("");
-
-            for (const file of selectedFiles) {
-                await spotsApi.uploadSpotPhoto(spot.id, file);
-            }
-
-            setSelectedFiles([]);
-            await reloadPhotos();
-        } catch (error) {
-            console.error(error);
-            setUploadError("Failed to upload photos");
-        } finally {
-            setUploading(false);
-        }
-    }
-
-    function handlePreviousPhoto() {
-        if (selectedPhotoIndex === null || photoPreviews.length === 0) {
-            return;
-        }
-
-        setSelectedPhotoIndex(
-            selectedPhotoIndex === 0 ? photoPreviews.length - 1 : selectedPhotoIndex - 1,
-        );
-    }
-
-    function handleNextPhoto() {
-        if (selectedPhotoIndex === null || photoPreviews.length === 0) {
-            return;
-        }
-
-        setSelectedPhotoIndex(
-            selectedPhotoIndex === photoPreviews.length - 1 ? 0 : selectedPhotoIndex + 1,
-        );
-    }
-
-    const selectedPhoto =
-        selectedPhotoIndex === null ? null : photoPreviews[selectedPhotoIndex];
-
-    if (spotLoading || spotError) {
-        return (
-            <section className="spots-panel">
-                <div className="spots-panel-header">
-                    <h1>Spot details</h1>
-                    <button type="button" className="panel-close-button" onClick={onClose}>
-                        ×
-                    </button>
-                </div>
-                {spotLoading ? <p>Loading spot...</p> : <p className="error-message">{spotError}</p>}
-            </section>
-        );
-    }
-
-    return (
-        <>
-            <section className="spots-panel">
-                <div className="spots-panel-header">
-                    <div>
-                        <h1>{spot.name}</h1>
-                        <span className="spot-type-badge">{formatEnumLabel(spot.type)}</span>
-                    </div>
-
-                    <button type="button" className="panel-close-button" onClick={onClose}>
-                        ×
-                    </button>
-                </div>
-
-                {spot.description && (
-                    <p className="spot-description">{spot.description}</p>
-                )}
-
-                <div className="spot-status-row">
-                    <span>Status</span>
-                    <strong>{spot.approved ? "Approved" : "Pending moderation"}</strong>
-                </div>
-
-                <div className="spot-status-row">
-                    <span>Location</span>
-                    <strong>
-                        {spot.latitude}, {spot.longitude}
-                    </strong>
-                </div>
-
-                {spot.features.length > 0 && (
-                    <div className="spot-details-section">
-                        <h2>Features</h2>
-
-                        <div className="selected-features">
-                            {spot.features.map((feature) => (
-                                <span key={feature} className="feature-chip-static">
-                                    {formatEnumLabel(feature)}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                <div className="spot-details-section">
-                    <h2>Photos</h2>
-
-                    {canUploadPhotos && (
-                        <div className="spot-photo-upload">
-                            <input
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp"
-                                multiple
-                                onChange={handleFilesChange}
-                            />
-
-                            {selectedFiles.length > 0 && (
-                                <div className="selected-photos-list">
-                                    {selectedFiles.map((file) => (
-                                        <span key={`${file.name}-${file.size}`}>
-                                            {file.name}
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
-
-                            <button
-                                type="button"
-                                className="secondary-button"
-                                disabled={uploading || selectedFiles.length === 0}
-                                onClick={() => void handleUploadPhotos()}
-                            >
-                                {uploading ? "Uploading..." : "Upload photos"}
-                            </button>
-
-                            {uploadError && <p className="error-message">{uploadError}</p>}
-                        </div>
-                    )}
-
-                    {photosLoading && <p className="field-help">Loading photos...</p>}
-
-                    {photosError && <p className="error-message">{photosError}</p>}
-
-                    {!photosLoading && !photosError && photoPreviews.length === 0 && (
-                        <div className="photos-placeholder">No photos yet.</div>
-                    )}
-
-                    {photoPreviews.length > 0 && (
-                        <div className="spot-photos-grid">
-                            {photoPreviews.map(({ photo, url }, index) => (
-                                <button
-                                    key={photo.id}
-                                    type="button"
-                                    className="spot-photo-button"
-                                    onClick={() => setSelectedPhotoIndex(index)}
-                                >
-                                    <img
-                                        src={url}
-                                        alt={photo.originalFilename}
-                                        className="spot-photo"
-                                    />
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </section>
-
-            {selectedPhoto && (
-                <div className="photo-viewer-overlay" role="dialog" aria-modal="true">
-                    <button
-                        type="button"
-                        className="photo-viewer-close"
-                        onClick={() => setSelectedPhotoIndex(null)}
-                    >
-                        ×
-                    </button>
-
-                    {photoPreviews.length > 1 && (
-                        <button
-                            type="button"
-                            className="photo-viewer-nav photo-viewer-nav-left"
-                            onClick={handlePreviousPhoto}
-                        >
-                            ‹
-                        </button>
-                    )}
-
-                    <img
-                        src={selectedPhoto.url}
-                        alt={selectedPhoto.photo.originalFilename}
-                        className="photo-viewer-image"
-                    />
-
-                    {photoPreviews.length > 1 && (
-                        <button
-                            type="button"
-                            className="photo-viewer-nav photo-viewer-nav-right"
-                            onClick={handleNextPhoto}
-                        >
-                            ›
-                        </button>
-                    )}
-
-                    <div className="photo-viewer-counter">
-                        {selectedPhotoIndex! + 1} / {photoPreviews.length}
-                    </div>
-                </div>
-            )}
-        </>
-    );
+    return <section className="spots-panel">
+        <div className="spots-panel-header"><div><h1>{loading || error ? "Spot details" : spot.name}</h1>
+            {!loading && !error && <span className="spot-type-badge">{formatLabel(spot.type)}</span>}</div>
+            <button type="button" aria-label="Close spot details" className="panel-close-button" onClick={onClose}>×</button></div>
+        {loading ? <p role="status">Loading spot...</p> : error ? <div role="alert"><p className="error-message">{error}</p>
+            <button className="secondary-button" onClick={() => setRetry((value) => value + 1)}>Retry spot</button></div> : <>
+            {spot.description && <p className="spot-description">{spot.description}</p>}
+            <div className="spot-status-row"><span>Status</span><strong>{spot.approved ? "Approved" : "Pending moderation"}</strong></div>
+            <div className="spot-status-row"><span>Location</span><strong>{spot.latitude}, {spot.longitude}</strong></div>
+            {!!spot.features.length && <div className="spot-details-section"><h2>Features</h2><div className="selected-features">
+                {spot.features.map((feature) => <span key={feature} className="feature-chip-static">{formatLabel(feature)}</span>)}</div></div>}
+            {accountError && <div role="alert"><p className="error-message">{accountError}</p>
+                <button className="secondary-button" onClick={() => setRetry((value) => value + 1)}>Retry account</button></div>}
+            <SpotPhotos key={spot.id} spot={spot} currentUser={currentUser} />
+        </>}
+    </section>;
 }
