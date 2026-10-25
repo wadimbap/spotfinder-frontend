@@ -1,0 +1,53 @@
+import { beforeEach, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { AdminSpotsPage } from "../src/features/admin/AdminSpotsPage";
+import { adminSpotsApi } from "../src/features/admin/adminSpotsApi";
+import { authApi } from "../src/features/auth/authApi";
+import { spot, user } from "./fixtures";
+
+vi.mock("../src/features/admin/adminSpotsApi", () => ({ adminSpotsApi: {
+    getPendingSpots: vi.fn(), approveSpot: vi.fn(), rejectSpot: vi.fn(),
+} }));
+vi.mock("../src/features/auth/authApi", () => ({ authApi: { getCurrentUser: vi.fn() } }));
+vi.mock("../src/features/spots/SpotDetailsPanel", () => ({ SpotDetailsPanel: ({ source }: { source: string }) => <p>Details source: {source}</p> }));
+
+beforeEach(() => {
+    vi.resetAllMocks();
+    vi.mocked(authApi.getCurrentUser).mockResolvedValue({ ...user, role: "MODERATOR" });
+    vi.mocked(adminSpotsApi.getPendingSpots).mockResolvedValue([{ ...spot, approved: false }]);
+});
+
+it("blocks direct route access for regular users", async () => {
+    vi.mocked(authApi.getCurrentUser).mockResolvedValue(user);
+    render(<MemoryRouter><AdminSpotsPage /></MemoryRouter>);
+    await screen.findByText(/requires MODERATOR/);
+    expect(adminSpotsApi.getPendingSpots).not.toHaveBeenCalled();
+    expect(screen.queryByText("Create approved spot")).toBeNull();
+});
+
+it("opens a full card through the administrative source", async () => {
+    render(<MemoryRouter><AdminSpotsPage /></MemoryRouter>);
+    fireEvent.click(await screen.findByText("Review details"));
+    expect(screen.getByText("Details source: admin")).toBeTruthy();
+});
+
+it("confirms rejection and removes the item only after success", async () => {
+    vi.mocked(adminSpotsApi.rejectSpot).mockResolvedValue();
+    render(<MemoryRouter><AdminSpotsPage /></MemoryRouter>);
+    fireEvent.click(await screen.findByText("Reject"));
+    expect(adminSpotsApi.rejectSpot).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("Confirm rejection"));
+    await screen.findByText("No pending spots.");
+    expect(adminSpotsApi.rejectSpot).toHaveBeenCalledWith(spot.id);
+});
+
+it("retains the item and reports a concurrent approval", async () => {
+    vi.mocked(adminSpotsApi.rejectSpot).mockRejectedValue({ isAxiosError: true, response: { status: 409 } });
+    render(<MemoryRouter><AdminSpotsPage /></MemoryRouter>);
+    fireEvent.click(await screen.findByText("Reject"));
+    fireEvent.click(screen.getByText("Confirm rejection"));
+    await screen.findByText(/already approved/);
+    expect(screen.getByText(spot.name)).toBeTruthy();
+    await waitFor(() => expect((screen.getByText("Confirm rejection") as HTMLButtonElement).disabled).toBe(false));
+});

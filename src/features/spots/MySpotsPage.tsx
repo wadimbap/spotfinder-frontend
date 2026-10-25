@@ -52,7 +52,7 @@ export function MySpotsPage() {
                 </article>
             ))}</div>}
             {selected && <SpotDialog onClose={() => setSelected(null)}>
-                <SpotDetailsPanel key={selected.id} spot={selected} onClose={() => setSelected(null)} />
+                <SpotDetailsPanel key={selected.id} source="own" spot={selected} onClose={() => setSelected(null)} />
             </SpotDialog>}
             {editing && <EditSpotPanel key={editing.id} spot={editing} onClose={() => setEditing(null)}
                 onConflict={() => setReload((value) => value + 1)} onSaved={(updated) => {
