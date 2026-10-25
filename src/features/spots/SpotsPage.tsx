@@ -116,7 +116,7 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
             )}
 
             {panelMode === "details" && selectedSpot && (
-                <SpotDetailsPanel spot={selectedSpot} onClose={handleClosePanel} />
+                <SpotDetailsPanel key={selectedSpot.id} spot={selectedSpot} onClose={handleClosePanel} />
             )}
         </div>
     );

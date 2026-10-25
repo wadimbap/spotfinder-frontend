@@ -7,6 +7,12 @@ import type {
 } from "./spotsTypes";
 
 export const spotsApi = {
+    async getApprovedSpot(spotId: string): Promise<SpotResponse> {
+        const response = await apiClient.get<SpotResponse>(`/api/v1/spots/${spotId}`);
+
+        return response.data;
+    },
+
     async getApprovedSpots(): Promise<SpotResponse[]> {
         const response = await apiClient.get<SpotResponse[]>("/api/v1/spots");
 

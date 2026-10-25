@@ -22,7 +22,10 @@ function formatEnumLabel(value: string): string {
         .join(" ");
 }
 
-export function SpotDetailsPanel({ spot, onClose }: SpotDetailsPanelProps) {
+export function SpotDetailsPanel({ spot: initialSpot, onClose }: SpotDetailsPanelProps) {
+    const [spot, setSpot] = useState(initialSpot);
+    const [spotLoading, setSpotLoading] = useState(initialSpot.approved);
+    const [spotError, setSpotError] = useState("");
     const [photoPreviews, setPhotoPreviews] = useState<PhotoPreview[]>([]);
     const [photosLoading, setPhotosLoading] = useState(true);
     const [photosError, setPhotosError] = useState("");
@@ -38,6 +41,40 @@ export function SpotDetailsPanel({ spot, onClose }: SpotDetailsPanelProps) {
     const canUploadPhotos = currentUserId === spot.createdByUserId;
 
     useEffect(() => {
+        if (!initialSpot.approved) {
+            return;
+        }
+
+        let active = true;
+
+        async function loadSpot() {
+            try {
+                const response = await spotsApi.getApprovedSpot(initialSpot.id);
+
+                if (active) {
+                    setSpot(response);
+                }
+            } catch (error) {
+                console.error(error);
+
+                if (active) {
+                    setSpotError("Failed to load spot. It may no longer be available.");
+                }
+            } finally {
+                if (active) {
+                    setSpotLoading(false);
+                }
+            }
+        }
+
+        void loadSpot();
+
+        return () => {
+            active = false;
+        };
+    }, [initialSpot.id, initialSpot.approved]);
+
+    useEffect(() => {
         async function loadCurrentUser() {
             try {
                 const user = await authApi.getCurrentUser();
@@ -51,6 +88,10 @@ export function SpotDetailsPanel({ spot, onClose }: SpotDetailsPanelProps) {
     }, []);
 
     useEffect(() => {
+        if (spotLoading || spotError) {
+            return;
+        }
+
         let active = true;
         const objectUrls: string[] = [];
 
@@ -97,7 +138,7 @@ export function SpotDetailsPanel({ spot, onClose }: SpotDetailsPanelProps) {
             active = false;
             objectUrls.forEach((url) => URL.revokeObjectURL(url));
         };
-    }, [spot.id]);
+    }, [spot.id, spotLoading, spotError]);
 
     async function reloadPhotos() {
         const oldUrls = photoPreviews.map((preview) => preview.url);
@@ -181,6 +222,20 @@ export function SpotDetailsPanel({ spot, onClose }: SpotDetailsPanelProps) {
 
     const selectedPhoto =
         selectedPhotoIndex === null ? null : photoPreviews[selectedPhotoIndex];
+
+    if (spotLoading || spotError) {
+        return (
+            <section className="spots-panel">
+                <div className="spots-panel-header">
+                    <h1>Spot details</h1>
+                    <button type="button" className="panel-close-button" onClick={onClose}>
+                        ×
+                    </button>
+                </div>
+                {spotLoading ? <p>Loading spot...</p> : <p className="error-message">{spotError}</p>}
+            </section>
+        );
+    }
 
     return (
         <>
