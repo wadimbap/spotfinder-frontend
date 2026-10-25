@@ -5,6 +5,7 @@ import type { SpotResponse } from "./spotsTypes";
 import { SpotDetailsPanel } from "./SpotDetailsPanel";
 import { SpotDialog } from "./SpotDialog";
 import { getApiError } from "../../shared/api/apiError";
+import { EditSpotPanel } from "./EditSpotPanel";
 
 export function MySpotsPage() {
     const [spots, setSpots] = useState<SpotResponse[]>([]);
@@ -12,6 +13,7 @@ export function MySpotsPage() {
     const [error, setError] = useState("");
     const [reload, setReload] = useState(0);
     const [selected, setSelected] = useState<SpotResponse | null>(null);
+    const [editing, setEditing] = useState<SpotResponse | null>(null);
 
     useEffect(() => {
         let active = true;
@@ -45,12 +47,18 @@ export function MySpotsPage() {
                         <strong className={spot.approved ? "approved-badge" : "pending-badge"}>{spot.approved ? "Approved" : "Pending"}</strong></div>
                     <p className="spot-description">{spot.description}</p>
                     <p className="field-help">{spot.latitude}, {spot.longitude}</p>
-                    <button className="secondary-button" onClick={() => setSelected(spot)}>View details</button>
+                    <div className="action-row"><button className="secondary-button" onClick={() => setSelected(spot)}>View details</button>
+                        {!spot.approved && <button className="secondary-button" onClick={() => setEditing(spot)}>Edit spot</button>}</div>
                 </article>
             ))}</div>}
             {selected && <SpotDialog onClose={() => setSelected(null)}>
                 <SpotDetailsPanel key={selected.id} spot={selected} onClose={() => setSelected(null)} />
             </SpotDialog>}
+            {editing && <EditSpotPanel key={editing.id} spot={editing} onClose={() => setEditing(null)}
+                onConflict={() => setReload((value) => value + 1)} onSaved={(updated) => {
+                    setSpots((current) => current.map((item) => item.id === updated.id ? updated : item));
+                    setEditing(null);
+                }} />}
         </div>
     );
 }

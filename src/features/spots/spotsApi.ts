@@ -4,9 +4,15 @@ import type {
     SpotMetadataResponse,
     SpotPhotoResponse,
     SpotResponse,
+    UpdateSpotRequest,
 } from "./spotsTypes";
 
 export const spotsApi = {
+    async updateSpot(spotId: string, request: UpdateSpotRequest): Promise<SpotResponse> {
+        const response = await apiClient.put<SpotResponse>(`/api/v1/spots/${spotId}`, request);
+        return response.data;
+    },
+
     async getMySpots(): Promise<SpotResponse[]> {
         const response = await apiClient.get<SpotResponse[]>("/api/v1/spots/my");
         return response.data;

@@ -43,6 +43,8 @@ export interface CreateSpotRequest {
     features: SpotFeature[];
 }
 
+export type UpdateSpotRequest = CreateSpotRequest;
+
 export interface SpotMetadataResponse {
     types: SpotType[];
     features: SpotFeature[];
