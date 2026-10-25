@@ -7,6 +7,7 @@ import { ProfilePage } from "../features/profile/ProfilePage";
 import { SpotsPage } from "../features/spots/SpotsPage";
 import { RequireAuth } from "../shared/auth/RequireAuth";
 import { AdminSpotsPage } from "../features/admin/AdminSpotsPage";
+import { MySpotsPage } from "../features/spots/MySpotsPage";
 
 export const router = createBrowserRouter([
     {
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
             </RequireAuth>
         ),
         children: [
+            { path: "my-spots", element: <MySpotsPage /> },
             {
                 index: true,
                 element: <Navigate to="/spots" replace />,

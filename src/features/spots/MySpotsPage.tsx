@@ -1,0 +1,56 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { spotsApi } from "./spotsApi";
+import type { SpotResponse } from "./spotsTypes";
+import { SpotDetailsPanel } from "./SpotDetailsPanel";
+import { SpotDialog } from "./SpotDialog";
+import { getApiError } from "../../shared/api/apiError";
+
+export function MySpotsPage() {
+    const [spots, setSpots] = useState<SpotResponse[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [reload, setReload] = useState(0);
+    const [selected, setSelected] = useState<SpotResponse | null>(null);
+
+    useEffect(() => {
+        let active = true;
+        async function load() {
+            setLoading(true);
+            setError("");
+            try {
+                const response = await spotsApi.getMySpots();
+                if (active) setSpots(response);
+            } catch (error) {
+                if (active) setError(getApiError(error, "Failed to load your spots."));
+            } finally {
+                if (active) setLoading(false);
+            }
+        }
+        void load();
+        return () => { active = false; };
+    }, [reload]);
+
+    return (
+        <div className="page">
+            <div className="page-header"><div><h1>My spots</h1><p>Your approved spots and submissions awaiting moderation.</p></div>
+                <Link className="primary-link-button" to="/spots">Add spot</Link></div>
+            {loading && <p role="status">Loading your spots...</p>}
+            {error && <div role="alert"><p className="error-message">{error}</p>
+                <button className="secondary-button" onClick={() => setReload((value) => value + 1)}>Retry</button></div>}
+            {!loading && !error && spots.length === 0 && <p className="page-card">You have not added any spots yet.</p>}
+            {!loading && !error && <div className="spots-grid">{spots.map((spot) => (
+                <article key={spot.id} className="spot-card">
+                    <div className="spot-card-header"><h2>{spot.name}</h2>
+                        <strong className={spot.approved ? "approved-badge" : "pending-badge"}>{spot.approved ? "Approved" : "Pending"}</strong></div>
+                    <p className="spot-description">{spot.description}</p>
+                    <p className="field-help">{spot.latitude}, {spot.longitude}</p>
+                    <button className="secondary-button" onClick={() => setSelected(spot)}>View details</button>
+                </article>
+            ))}</div>}
+            {selected && <SpotDialog onClose={() => setSelected(null)}>
+                <SpotDetailsPanel key={selected.id} spot={selected} onClose={() => setSelected(null)} />
+            </SpotDialog>}
+        </div>
+    );
+}

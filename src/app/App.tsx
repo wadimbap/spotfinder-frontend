@@ -45,6 +45,7 @@ export function App() {
                 <nav className="app-nav">
                     <NavLink to="/profile">Profile</NavLink>
                     <NavLink to="/spots">Spots</NavLink>
+                    <NavLink to="/my-spots">My spots</NavLink>
 
                     {canSeeAdminSpots && (
                         <NavLink to="/admin/spots">Admin spots</NavLink>
