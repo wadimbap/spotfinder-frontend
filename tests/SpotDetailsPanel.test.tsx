@@ -5,15 +5,18 @@ import { spotsApi } from "../src/features/spots/spotsApi";
 import { authApi } from "../src/features/auth/authApi";
 import { spot, user } from "./fixtures";
 import { adminSpotsApi } from "../src/features/admin/adminSpotsApi";
+import { commentsApi } from "../src/features/comments/commentsApi";
 
 vi.mock("../src/features/spots/spotsApi", () => ({ spotsApi: {
     getApprovedSpot: vi.fn(), getSpotPhotos: vi.fn(), getSpotPhotoContent: vi.fn(),
 } }));
 vi.mock("../src/features/auth/authApi", () => ({ authApi: { getCurrentUser: vi.fn() } }));
 vi.mock("../src/features/admin/adminSpotsApi", () => ({ adminSpotsApi: { getSpot: vi.fn() } }));
+vi.mock("../src/features/comments/commentsApi", () => ({ commentsApi: { getComments: vi.fn() } }));
 
 beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(commentsApi.getComments).mockResolvedValue([]);
     vi.mocked(authApi.getCurrentUser).mockResolvedValue(user);
     vi.mocked(spotsApi.getSpotPhotos).mockResolvedValue([]);
     vi.mocked(spotsApi.getApprovedSpot).mockResolvedValue({ ...spot, name: "Fresh spot" });

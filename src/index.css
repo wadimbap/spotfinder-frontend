@@ -12,6 +12,13 @@
 .success-message { color: #166534; }
 .photo-delete-confirm { display: grid; gap: 8px; margin-block: 8px; }
 .spots-top-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.comment-list { display: grid; gap: 12px; }
+.comment { border-left: 2px solid #cbd5e1; padding: 12px; border-radius: 0 10px 10px 0; background: #f8fafc; min-width: 0; }
+.comment-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12px; color: #64748b; }
+.comment-meta strong { color: #17202a; }
+.comment-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; margin: 12px 0; }
+.comment-editor { margin-top: 20px; }
+.comment-link { border: 0; background: transparent; color: #2563eb; padding: 2px; cursor: pointer; }
 .feature-options { border: 1px solid #cbd5e1; border-radius: 10px; margin: 0 0 16px; display: flex; gap: 12px; flex-wrap: wrap; }
 .feature-options label { font-size: 14px; }
 .location-picker { height: 300px; overflow: hidden; border-radius: 12px; margin: 12px 0; }

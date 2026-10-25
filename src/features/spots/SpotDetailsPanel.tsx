@@ -8,6 +8,7 @@ import { getApiError } from "../../shared/api/apiError";
 import { adminSpotsApi } from "../admin/adminSpotsApi";
 import { ModerationActions } from "../admin/ModerationActions";
 import { DeleteSpotAction } from "../admin/DeleteSpotAction";
+import { SpotComments } from "../comments/SpotComments";
 
 interface SpotDetailsPanelProps {
     spot: SpotResponse;
@@ -75,6 +76,7 @@ export function SpotDetailsPanel({ spot: initialSpot, onClose, source = "public"
             {accountError && <div role="alert"><p className="error-message">{accountError}</p>
                 <button className="secondary-button" onClick={() => setRetry((value) => value + 1)}>Retry account</button></div>}
             <SpotPhotos key={spot.id} spot={spot} currentUser={currentUser} />
+            <SpotComments key={`comments-${spot.id}`} spotId={spot.id} currentUser={currentUser} />
             {source === "admin" && !spot.approved && (currentUser?.role === "MODERATOR" || currentUser?.role === "ADMIN")
                 && <ModerationActions spotId={spot.id} onDone={onModerated ?? (() => onClose())} />}
             <DeleteSpotAction spotId={spot.id} currentUser={currentUser} onDeleted={onDeleted ?? (() => onClose())} />

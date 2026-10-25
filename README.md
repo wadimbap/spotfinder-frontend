@@ -23,8 +23,16 @@ The app provides authentication, user profile management, an interactive spot ma
 - Protected application routes
 - User profile page
 - Editable primary activity
+- Editable display name and explicit primary activity reset
 - Interactive spots map
 - Spot details panel
+- My spots page with Approved/Pending statuses
+- Editing own pending spots, including location selection on a map
+- Photo upload retries and deletion according to user permissions
+- Explicit approved spot creation for moderators and administrators
+- Full moderation cards with photos and comments
+- Confirmed administrator spot deletion
+- Threaded comments, replies, and editing of own comments
 - Spot creation directly from the map
 - Spot metadata loading from backend
 - Stage deployment with Docker and Gitea Actions
@@ -135,6 +143,16 @@ Run ESLint checks:
 npm run lint
 ```
 
+Run component and contract tests:
+
+```bash
+npm test
+```
+
+Tests use Vitest, React Testing Library, and mocked API responses. They cover role-based
+actions, validation, failed requests, upload retries, and comment threads. They do not
+replace integration testing with a running PostgreSQL/MinIO backend.
+
 ## Docker Build
 
 Build stage image manually:
@@ -236,8 +254,19 @@ Authenticated requests use JWT Bearer token.
 /register
 /profile
 /spots
+/my-spots
 /admin/spots
 ```
+
+`/my-spots` includes all of the current user's spots. Only Pending spots can be edited.
+The editor lets the owner change details and pick a new location on a map.
+
+MODERATOR and ADMIN users have a separate **Create approved spot** action. The ordinary
+**Add spot** flow always submits the spot for moderation. Only ADMIN can delete a spot;
+photo deletion is available to the photo author, MODERATOR, and ADMIN.
+
+Comments use the existing `/api/v1/comment` API. Replies preserve their parent ID,
+only the comment author can edit text, and the maximum comment length is 3000 characters.
 
 `/spots` is the main map page. Spot creation is handled inside the same page through the `Add spot` panel.
 
