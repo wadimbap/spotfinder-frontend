@@ -3,7 +3,6 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { authApi } from "../features/auth/authApi";
 import type { CurrentUserResponse } from "../features/auth/authTypes";
-import { tokenStorage } from "../shared/auth/tokenStorage";
 import { getApiError, getApiStatus } from "../shared/api/apiError";
 import "./layout.css";
 import { ThemeControl } from "../shared/theme/ThemeControl";
@@ -12,6 +11,7 @@ export function App() {
     const navigate = useNavigate();
     const [sessionError, setSessionError] = useState("");
     const [retry, setRetry] = useState(0);
+    const [loggingOut, setLoggingOut] = useState(false);
 
     const [currentUser, setCurrentUser] = useState<CurrentUserResponse | null>(
         null,
@@ -29,7 +29,6 @@ export function App() {
             } catch (error) {
                 if (!active) return;
                 if (getApiStatus(error) === 401) {
-                    tokenStorage.removeAccessToken();
                     navigate("/login");
                 } else {
                     setSessionError(getApiError(error, "Failed to load your account."));
@@ -41,9 +40,18 @@ export function App() {
         return () => { active = false; };
     }, [navigate, retry]);
 
-    function handleLogout() {
-        tokenStorage.removeAccessToken();
-        navigate("/login");
+    async function handleLogout() {
+        setLoggingOut(true);
+        setSessionError("");
+
+        try {
+            await authApi.logout();
+            navigate("/login", { replace: true });
+        } catch (error) {
+            setSessionError(getApiError(error, "Could not sign out. Please try again."));
+        } finally {
+            setLoggingOut(false);
+        }
     }
 
     return (
@@ -70,8 +78,9 @@ export function App() {
                         <span className="app-user-role">{currentUser.role}</span>
                     )}
 
-                    <button type="button" className="logout-button" onClick={handleLogout}>
-                        Logout
+                    <button type="button" className="logout-button"
+                        onClick={() => void handleLogout()} disabled={loggingOut}>
+                        {loggingOut ? "Signing out..." : "Logout"}
                     </button>
                 </div>
             </header>

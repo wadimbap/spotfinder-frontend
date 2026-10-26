@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { authApi } from "./authApi";
-import { tokenStorage } from "../../shared/auth/tokenStorage";
 import { ThemeControl } from "../../shared/theme/ThemeControl";
 
 export function RegisterPage() {
@@ -24,14 +23,13 @@ export function RegisterPage() {
             setLoading(true);
             setErrorMessage("");
 
-            const response = await authApi.register({
+            await authApi.register({
                 email,
                 name,
                 password,
                 passwordConfirmation,
             });
 
-            tokenStorage.setAccessToken(response.accessToken);
             navigate("/profile");
         } catch (error) {
             console.error(error);

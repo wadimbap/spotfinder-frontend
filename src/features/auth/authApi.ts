@@ -1,4 +1,5 @@
 import { apiClient } from "../../shared/api/apiClient";
+import { authenticate, logoutSession } from "../../shared/auth/sessionManager";
 import type {
     AuthResponse,
     CurrentUserResponse,
@@ -9,21 +10,15 @@ import type {
 
 export const authApi = {
     async login(request: LoginRequest): Promise<AuthResponse> {
-        const response = await apiClient.post<AuthResponse>(
-            "/api/v1/auth/login",
-            request,
-        );
-
-        return response.data;
+        return authenticate("login", request);
     },
 
     async register(request: RegisterRequest): Promise<AuthResponse> {
-        const response = await apiClient.post<AuthResponse>(
-            "/api/v1/auth/register",
-            request,
-        );
+        return authenticate("register", request);
+    },
 
-        return response.data;
+    async logout(): Promise<void> {
+        return logoutSession();
     },
 
     async getCurrentUser(): Promise<CurrentUserResponse> {

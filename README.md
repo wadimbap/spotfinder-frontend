@@ -86,10 +86,24 @@ VITE_API_BASE_URL=http://localhost:8080
 For stage build:
 
 ```env
-VITE_API_BASE_URL=http://stage-api.deployflow.ru
+VITE_API_BASE_URL=https://stage-api.deployflow.ru
 ```
 
 Vite exposes only variables with the `VITE_` prefix to the browser.
+
+Auth uses a 15-minute Bearer access token and an HttpOnly refresh cookie. The app
+restores sessions when opened and refreshes failed protected requests once. Login,
+refresh and logout are serialized across same-origin tabs with Web Locks (HTTPS or
+local loopback is required). Network failures do not delete authorization. A failed
+server logout is shown as an error and can be retried.
+
+The backend must allow the exact frontend origin with credentials and the
+`X-Auth-Request` / `X-Refresh-Request` headers. For local HTTP development run the
+backend with `AUTH_COOKIE_SECURE=false` and use `localhost` on both sides. Stage
+frontend and API must have working HTTPS before the new frontend is deployed.
+Frontend/API on unrelated sites are not supported by the configured SameSite=Lax
+refresh cookie. Backend session and TLS rollout instructions are in its
+`docs/auth-sessions.md`; external TLS configuration is not installed by this repo.
 
 ## Local Development
 
@@ -158,7 +172,7 @@ replace integration testing with a running PostgreSQL/MinIO backend.
 Build stage image manually:
 
 ```bash
-docker build --build-arg VITE_API_BASE_URL=http://stage-api.deployflow.ru -t spotfinder-frontend:stage .
+docker build --build-arg VITE_API_BASE_URL=https://stage-api.deployflow.ru -t spotfinder-frontend:stage .
 ```
 
 Run locally:
@@ -204,13 +218,13 @@ spotfinder-stage-net
 Frontend stage URL:
 
 ```text
-http://stage.deployflow.ru
+https://stage.deployflow.ru
 ```
 
 Backend stage API URL:
 
 ```text
-http://stage-api.deployflow.ru
+https://stage-api.deployflow.ru
 ```
 
 ## Stage Access

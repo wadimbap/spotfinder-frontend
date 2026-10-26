@@ -27,7 +27,7 @@ jobs:
       - name: Build frontend Docker image
         run: |
           docker build \
-            --build-arg VITE_API_BASE_URL=http://stage-api.deployflow.ru \
+            --build-arg VITE_API_BASE_URL=https://stage-api.deployflow.ru \
             -t spotfinder-frontend:stage .
 
       - name: Prepare stage compose file

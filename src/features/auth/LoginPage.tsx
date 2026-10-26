@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { authApi } from "./authApi";
-import { tokenStorage } from "../../shared/auth/tokenStorage";
 import { ThemeControl } from "../../shared/theme/ThemeControl";
 
 export function LoginPage() {
@@ -21,12 +20,11 @@ export function LoginPage() {
             setLoading(true);
             setErrorMessage("");
 
-            const response = await authApi.login({
+            await authApi.login({
                 email,
                 password,
             });
 
-            tokenStorage.setAccessToken(response.accessToken);
             navigate("/profile");
         } catch (error) {
             console.error(error);

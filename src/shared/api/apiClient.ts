@@ -1,26 +1,61 @@
 import axios from "axios";
+import type { InternalAxiosRequestConfig } from "axios";
 
+import { sessionClient } from "../auth/sessionClient";
+import { invalidateSession, refreshAccessToken, SessionChangedError } from "../auth/sessionManager";
 import { tokenStorage } from "../auth/tokenStorage";
+import type { SessionSnapshot } from "../auth/tokenStorage";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-if (!API_BASE_URL) {
-    throw new Error("VITE_API_BASE_URL is not configured");
+interface SessionRequestConfig extends InternalAxiosRequestConfig {
+    sessionEpoch?: string;
+    sessionToken?: string | null;
+    sessionRetried?: boolean;
 }
 
 export const apiClient = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: sessionClient.defaults.baseURL,
     headers: {
         "Content-Type": "application/json",
     },
 });
 
-apiClient.interceptors.request.use((config) => {
-    const token = tokenStorage.getAccessToken();
+apiClient.interceptors.request.use((original) => {
+    const config = original as SessionRequestConfig;
+    const current = tokenStorage.getSnapshot();
+    config.sessionEpoch ??= current.epoch;
 
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    if (config.sessionEpoch !== current.epoch) throw new SessionChangedError();
+
+    config.sessionToken = current.token;
+    if (current.token) {
+        config.headers.set("Authorization", `Bearer ${current.token}`);
+    } else {
+        config.headers.delete("Authorization");
     }
 
     return config;
 });
+
+apiClient.interceptors.response.use(
+    (response) => response,
+    async (error: unknown) => {
+        if (!axios.isAxiosError(error) || error.response?.status !== 401) throw error;
+
+        const config = error.config as SessionRequestConfig | undefined;
+        if (!config || config.url?.startsWith("/api/v1/auth/")) throw error;
+
+        const expected: SessionSnapshot = {
+            epoch: config.sessionEpoch ?? "legacy",
+            token: config.sessionToken ?? null,
+        };
+
+        if (config.sessionRetried) {
+            await invalidateSession(expected);
+            throw error;
+        }
+
+        config.sessionRetried = true;
+        await refreshAccessToken(expected);
+        return apiClient.request(config);
+    },
+);
