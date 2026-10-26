@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
+import { lockBodyScroll } from "../../shared/components/scrollLock";
 
 interface Props { children: ReactNode; onClose: () => void; label?: string }
 
@@ -7,11 +8,10 @@ export function SpotDialog({ children, onClose, label = "Spot details" }: Props)
     const container = useRef<HTMLDivElement>(null);
     useEffect(() => {
         const previous = document.activeElement as HTMLElement | null;
-        const previousOverflow = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
+        const unlockScroll = lockBodyScroll();
         container.current?.focus();
         return () => {
-            document.body.style.overflow = previousOverflow;
+            unlockScroll();
             previous?.focus();
         };
     }, []);

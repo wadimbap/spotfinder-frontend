@@ -73,10 +73,10 @@ export function SpotDetailsPanel({ spot: initialSpot, onClose, source = "public"
                     <strong className={spot.approved ? "approved-badge" : "pending-badge"}>{spot.approved ? "Approved" : "Pending"}</strong></div>
             </div></div>
             {spot.description && <p className="spot-description">{spot.description}</p>}
-            <div className="spot-status-row"><span>Status</span><strong>{spot.approved ? "Approved" : "Pending moderation"}</strong></div>
-            <div className="spot-status-row"><span>Location</span><strong>{spot.latitude}, {spot.longitude}</strong></div>
-            {!!spot.features.length && <div className="spot-details-section"><h2>Features</h2><div className="selected-features">
-                {spot.features.map((feature) => <span key={feature} className="feature-chip-static">{formatLabel(feature)}</span>)}</div></div>}
+            <p className="spot-location"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></svg>
+                <span>{spot.latitude}, {spot.longitude}</span></p>
+            {!!spot.features.length && <div className="selected-features spot-detail-features" role="group" aria-label="Features">
+                {spot.features.map((feature) => <span key={feature} className="feature-chip-static">{formatLabel(feature)}</span>)}</div>}
             {accountError && <div role="alert"><p className="error-message">{accountError}</p>
                 <button className="secondary-button" onClick={() => setRetry((value) => value + 1)}>Retry account</button></div>}
             </SpotPhotos>

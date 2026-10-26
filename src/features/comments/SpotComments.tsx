@@ -50,8 +50,9 @@ export function SpotComments({ spotId, currentUser }: Props) {
                 const own = currentUser?.id === comment.createdByUserId;
                 const active = editor?.comment.id === comment.id;
                 return <article className="comment" key={comment.id} style={{ marginLeft: Math.min(depth, 4) * 12 }} aria-label={`Comment by ${name(comment)}`}>
+                    <span className="comment-avatar" aria-hidden="true">{name(comment).slice(0, 1).toUpperCase()}</span>
                     <div className="comment-meta"><strong>{name(comment)}{own ? " (You)" : ""}</strong>
-                        <time dateTime={comment.createdAt}>{new Date(comment.createdAt).toLocaleString()}</time>
+                        <time dateTime={comment.createdAt} title={new Date(comment.createdAt).toLocaleString()}>{new Date(comment.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}</time>
                         {comment.updatedAt !== comment.createdAt && <span>Edited</span>}</div>
                     {parent && <p className="field-help">Reply to {name(parent)}</p>}
                     <p className="comment-text">{comment.text}</p>
@@ -68,7 +69,7 @@ export function SpotComments({ spotId, currentUser }: Props) {
                         onBusyChange={setSaving} onSaved={(response) => { saved(response); setEditor(null); }} onCancel={() => setEditor(null)} />}
                 </article>;
             })}</div>
-            {currentUser ? <CommentEditor id={`new-comment-${spotId}`} label="Your comment" submitLabel="Add comment"
+            {currentUser ? <CommentEditor id={`new-comment-${spotId}`} label="Your comment" submitLabel="Add comment" compact
                 disabled={editor !== null} onBusyChange={setSaving}
                 onSubmit={(text) => commentsApi.createComment(spotId, { parentCommentId: null, text })} onSaved={saved} />
                 : <p className="field-help">Your account must be loaded before you can comment.</p>}

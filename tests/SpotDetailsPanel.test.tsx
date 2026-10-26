@@ -38,7 +38,7 @@ describe("spot details", () => {
 
     it("opens an own pending spot without using the approved-only endpoint", async () => {
         render(<SpotDetailsPanel spot={{ ...spot, approved: false }} onClose={vi.fn()} />);
-        expect(screen.getByText("Pending moderation")).toBeTruthy();
+        expect(screen.getByText("Pending")).toBeTruthy();
         await waitFor(() => expect(spotsApi.getSpotPhotos).toHaveBeenCalledWith(spot.id));
         expect(spotsApi.getApprovedSpot).not.toHaveBeenCalled();
     });

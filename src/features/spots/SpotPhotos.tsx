@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { CurrentUserResponse } from "../auth/authTypes";
 import type { SpotPhotoResponse, SpotResponse } from "./spotsTypes";
 import { spotsApi } from "./spotsApi";
@@ -7,6 +7,7 @@ import { validatePhoto } from "./photoValidation";
 import { sortSpotPhotos } from "./photoOrder";
 import { notifyPhotoUpdate } from "./photoUpdates";
 import { PhotoPlaceholder } from "./PhotoPlaceholder";
+import { PhotoViewer } from "./PhotoViewer";
 
 interface Preview { photo: SpotPhotoResponse; url: string }
 interface Props { spot: SpotResponse; currentUser: CurrentUserResponse | null; showCover?: boolean; children?: ReactNode }
@@ -29,6 +30,7 @@ export function SpotPhotos({ spot, currentUser, showCover = false, children }: P
     const mounted = useRef(false);
     const input = useRef<HTMLInputElement>(null);
     const urls = useRef(new Set<string>());
+    const closeViewer = useCallback(() => setSelectedId(null), []);
     const canUpload = currentUser?.id === spot.createdByUserId;
     const canDelete = (photo: SpotPhotoResponse) => !!currentUser && (currentUser.id === photo.createdByUserId
         || currentUser.role === "ADMIN" || currentUser.role === "MODERATOR");
@@ -118,8 +120,8 @@ export function SpotPhotos({ spot, currentUser, showCover = false, children }: P
         }
     }
 
-    const selectedIndex = previews.findIndex((item) => item.photo.id === selectedId);
-    const selected = previews[selectedIndex];
+    const selected = previews.find((item) => item.photo.id === selectedId);
+    const deleting = previews.find((item) => item.photo.id === deleteTarget);
     const cover = previews.find((item) => item.photo.id === photoIds[0]);
     return <>
         {showCover && <div className="spot-detail-cover">
@@ -129,44 +131,41 @@ export function SpotPhotos({ spot, currentUser, showCover = false, children }: P
                 : <PhotoPlaceholder loading={loading} unavailable={!loading && (!!photoIds.length || !!error)} />}
         </div>}
         {children}
-        <div className="spot-details-section">
-        <h2>Photos</h2>
+        <div className="spot-details-section spot-gallery" role="group" aria-label="Photos">
         {loading && <p role="status">Loading photos...</p>}
         {error && <div role="alert"><p className="error-message">{error}</p><button className="secondary-button" disabled={busy} onClick={() => setReload((value) => value + 1)}>Retry photos</button></div>}
         {deleteError && <p className="error-message" role="alert">{deleteError}</p>}
-        {!loading && !error && !previews.length && <div className="photos-placeholder">No photos yet.</div>}
-        <div className="spot-photos-grid">{previews.map(({ photo, url }) => <div key={photo.id}>
+        {!loading && !error && !previews.length && <p className="field-help">No photos yet.</p>}
+        {canUpload && <input ref={input} id={`photos-${spot.id}`} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden disabled={busy}
+            aria-label="Add photos (JPEG, PNG, WebP; up to 5 MiB each)" onChange={(event) => {
+                const selected = Array.from(event.target.files ?? []);
+                setUploadNotice("");
+                if (selected.length > 5) { setUploadError("Choose up to 5 files at a time."); setFiles([]); if (input.current) input.current.value = ""; return; }
+                setFiles(selected); setUploadError(selected.map(validatePhoto).filter(Boolean).join(" "));
+            }} />}
+        <div className="spot-photos-grid">{previews.map(({ photo, url }) => <div key={photo.id} className="spot-photo-item">
             <button className="spot-photo-button" aria-label={`View ${photo.originalFilename}`} onClick={() => setSelectedId(photo.id)}>
                 <img src={url} alt={photo.originalFilename} className="spot-photo" /></button>
-            {canDelete(photo) && (deleteTarget === photo.id ? <div className="photo-delete-confirm">
-                <p>Delete this photo permanently?</p>
-                <button className="reject-button" disabled={busy || loading} onClick={() => void remove(photo)}>Confirm delete photo</button>
-                <button className="secondary-button" disabled={busy} onClick={() => { setDeleteTarget(null); setDeleteError(""); }}>Cancel</button>
-            </div> : <button className="secondary-button" disabled={busy || loading} onClick={() => { setDeleteTarget(photo.id); setDeleteError(""); }}>Delete photo</button>)}
-        </div>)}</div>
-        {canUpload && <div className="spot-photo-upload">
-            <label htmlFor={`photos-${spot.id}`}>Add photos (JPEG, PNG, WebP; up to 5 MiB each)</label>
-            <input ref={input} id={`photos-${spot.id}`} type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={busy}
-                onChange={(event) => {
-                    const selected = Array.from(event.target.files ?? []);
-                    setUploadNotice("");
-                    if (selected.length > 5) { setUploadError("Choose up to 5 files at a time."); setFiles([]); return; }
-                    setFiles(selected); setUploadError(selected.map(validatePhoto).filter(Boolean).join(" "));
-                }} />
+            {canDelete(photo) && <button type="button" className="photo-delete-button" aria-label={`Delete photo ${photo.originalFilename}`} title="Delete photo"
+                disabled={busy || loading} onClick={() => { setDeleteTarget(photo.id); setDeleteError(""); }}>×</button>}
+        </div>)}
+            {canUpload && <button type="button" className="photo-add-tile" disabled={busy || loading} onClick={() => input.current?.click()}
+                title="JPEG, PNG or WebP; up to 5 files, 5 MiB each"><span aria-hidden="true">＋</span><span>Add photos</span></button>}
+        </div>
+        {deleting && <div className="photo-delete-confirm" role="group" aria-label="Confirm photo deletion">
+            <p>Delete this photo permanently? <strong>{deleting.photo.originalFilename}</strong></p>
+            <div className="action-row"><button className="reject-button" disabled={busy || loading} onClick={() => void remove(deleting.photo)}>Confirm delete photo</button>
+                <button type="button" className="secondary-button" disabled={busy} onClick={() => { setDeleteTarget(null); setDeleteError(""); }}>Cancel</button></div>
+        </div>}
+        {canUpload && files.length > 0 && <div className="spot-photo-upload">
             <ul className="field-help">{files.map((file, index) => <li key={`${file.name}-${index}`}>{file.name}</li>)}</ul>
-            <button className="secondary-button" disabled={busy || loading || !files.length} onClick={() => void upload()}>{busy ? "Processing..." : "Upload photos"}</button>
-            {uploadError && <p className="error-message" role="alert">{uploadError}</p>}
-            {uploadNotice && <p className="success-message" role="status">{uploadNotice}</p>}
+            <p className="field-help">JPEG, PNG, WebP · up to 5 files · 5 MiB each</p>
+            <div className="action-row"><button className="primary-button" disabled={busy || loading || files.some((file) => !!validatePhoto(file))} onClick={() => void upload()}>{busy ? "Processing..." : "Upload photos"}</button>
+                <button type="button" className="secondary-button" disabled={busy} onClick={() => { setFiles([]); setUploadError(""); setUploadNotice(""); if (input.current) input.current.value = ""; }}>Cancel</button></div>
         </div>}
-        {selected && <div className="photo-viewer-overlay" role="dialog" aria-modal="true" aria-label="Photo viewer"
-            onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); setSelectedId(null); } }}>
-            <button autoFocus className="photo-viewer-close" aria-label="Close photo" onClick={() => setSelectedId(null)}>×</button>
-            {previews.length > 1 && <button className="photo-viewer-nav photo-viewer-nav-left" aria-label="Previous photo"
-                onClick={() => setSelectedId(previews[(selectedIndex + previews.length - 1) % previews.length].photo.id)}>‹</button>}
-            <img src={selected.url} alt={selected.photo.originalFilename} className="photo-viewer-image" />
-            {previews.length > 1 && <button className="photo-viewer-nav photo-viewer-nav-right" aria-label="Next photo"
-                onClick={() => setSelectedId(previews[(selectedIndex + 1) % previews.length].photo.id)}>›</button>}
-            <div className="photo-viewer-counter">{selectedIndex + 1} / {previews.length}</div>
-        </div>}
+        {uploadError && <p className="error-message" role="alert">{uploadError}</p>}
+        {uploadNotice && <p className="success-message" role="status">{uploadNotice}</p>}
+        {selected && <PhotoViewer photos={previews.map(({ photo, url }) => ({ id: photo.id, url, alt: photo.originalFilename }))}
+            selectedId={selected.photo.id} onSelect={setSelectedId} onClose={closeViewer} />}
     </div></>;
 }

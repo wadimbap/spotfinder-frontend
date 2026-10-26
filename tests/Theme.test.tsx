@@ -21,13 +21,17 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 function renderControl() { return render(<ThemeProvider><ThemeControl /></ThemeProvider>); }
+function selectTheme(label: string) {
+    fireEvent.click(screen.getByRole("combobox", { name: "Theme", exact: true }));
+    fireEvent.click(screen.getByRole("option", { name: label, exact: true }));
+}
 function changeSystem(dark: boolean) {
     act(() => { systemDark = dark; media.dispatchEvent(new Event("change")); });
 }
 
 it("defaults to system and follows live system changes", () => {
     renderControl();
-    expect((screen.getByLabelText("Theme") as HTMLSelectElement).value).toBe("system");
+    expect(screen.getByRole("combobox", { name: "Theme" }).textContent).toBe("System");
     expect(document.documentElement.dataset.theme).toBe("light");
     changeSystem(true);
     expect(document.documentElement.dataset.theme).toBe("dark");
@@ -38,13 +42,13 @@ it("defaults to system and follows live system changes", () => {
 
 it("persists manual choice across mounts and ignores OS changes until System is selected", () => {
     const view = renderControl();
-    fireEvent.change(screen.getByLabelText("Theme"), { target: { value: "dark" } });
+    selectTheme("Dark");
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
     changeSystem(true); changeSystem(false);
     expect(document.documentElement.dataset.theme).toBe("dark");
     view.unmount(); renderControl();
-    expect((screen.getByLabelText("Theme") as HTMLSelectElement).value).toBe("dark");
-    fireEvent.change(screen.getByLabelText("Theme"), { target: { value: "system" } });
+    expect(screen.getByRole("combobox", { name: "Theme" }).textContent).toBe("Dark");
+    selectTheme("System");
     expect(document.documentElement.dataset.theme).toBe("light");
     changeSystem(true);
     expect(document.documentElement.dataset.theme).toBe("dark");
@@ -72,8 +76,8 @@ it("allows theme switching when storage reads and writes are denied", () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new Error("denied"); });
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("denied"); });
     renderControl();
-    fireEvent.change(screen.getByLabelText("Theme"), { target: { value: "dark" } });
+    selectTheme("Dark");
     expect(document.documentElement.dataset.theme).toBe("dark");
-    fireEvent.change(screen.getByLabelText("Theme"), { target: { value: "light" } });
+    selectTheme("Light");
     expect(document.documentElement.dataset.theme).toBe("light");
 });

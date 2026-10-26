@@ -12,7 +12,8 @@ it("saves a trimmed name and explicitly clears activity", async () => {
     render(<ProfilePage />);
     await screen.findByLabelText("Name");
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: " New name " } });
-    fireEvent.change(screen.getByLabelText("Primary activity"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("combobox", { name: "Primary activity" }));
+    fireEvent.click(screen.getByRole("option", { name: "Not selected", exact: true }));
     fireEvent.click(screen.getByText("Save profile"));
     expect(await screen.findByText("Profile saved.")).toBeTruthy();
     expect(authApi.updateCurrentUser).toHaveBeenCalledWith({ displayName: "New name", primaryActivity: null });

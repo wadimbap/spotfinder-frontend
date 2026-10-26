@@ -22,7 +22,7 @@ beforeEach(() => {
 it("requires confirmation, removes a photo and releases its URL", async () => {
     vi.mocked(spotsApi.deleteSpotPhoto).mockResolvedValue();
     const view = render(<SpotPhotos spot={spot} currentUser={user} />);
-    fireEvent.click(await screen.findByText("Delete photo"));
+    fireEvent.click(await screen.findByRole("button", { name: /^Delete photo / }));
     expect(spotsApi.deleteSpotPhoto).not.toHaveBeenCalled();
     fireEvent.click(screen.getByText("Confirm delete photo"));
     await screen.findByText("No photos yet.");
@@ -35,20 +35,20 @@ it("requires confirmation, removes a photo and releases its URL", async () => {
 it("hides upload and deletion for an unrelated regular user", async () => {
     render(<SpotPhotos spot={spot} currentUser={{ ...user, id: "other" }} />);
     await screen.findByAltText("ride.png");
-    expect(screen.queryByText("Delete photo")).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Delete photo / })).toBeNull();
     expect(screen.queryByText("Upload photos")).toBeNull();
 });
 
 it("allows moderators to delete other authors' photos without granting upload", async () => {
     render(<SpotPhotos spot={spot} currentUser={{ ...user, id: "mod", role: "MODERATOR" }} />);
-    expect(await screen.findByText("Delete photo")).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /^Delete photo / })).toBeTruthy();
     expect(screen.queryByText("Upload photos")).toBeNull();
 });
 
 it("retains the photo and shows a denied deletion", async () => {
     vi.mocked(spotsApi.deleteSpotPhoto).mockRejectedValue({ isAxiosError: true, response: { status: 403 } });
     render(<SpotPhotos spot={spot} currentUser={user} />);
-    fireEvent.click(await screen.findByText("Delete photo"));
+    fireEvent.click(await screen.findByRole("button", { name: /^Delete photo / }));
     fireEvent.click(screen.getByText("Confirm delete photo"));
     expect(await screen.findByText(/do not have permission/)).toBeTruthy();
     expect(screen.getByAltText("ride.png")).toBeTruthy();
@@ -91,7 +91,7 @@ it("uses the earliest photo as the large cover, opens it, and replaces it after 
     fireEvent.click(cover);
     expect(screen.getByRole("dialog", { name: "Photo viewer" })).toBeTruthy();
     fireEvent.click(screen.getByLabelText("Close photo"));
-    fireEvent.click(screen.getAllByText("Delete photo")[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: /^Delete photo / })[0]);
     fireEvent.click(screen.getByText("Confirm delete photo"));
     await waitFor(() => expect(cover.querySelector("img")?.src).toBe("blob:second"));
     expect(spotsApi.getSpotPhotos).toHaveBeenCalledTimes(1);
@@ -116,7 +116,7 @@ it("refreshes a mounted list cover when the gallery deletes its first photo", as
     const cover = await screen.findByAltText(`Cover of ${spot.name}`);
     const oldSource = cover.getAttribute("src");
     await screen.findByAltText("second.png");
-    fireEvent.click(screen.getAllByText("Delete photo")[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: /^Delete photo / })[0]);
     fireEvent.click(screen.getByText("Confirm delete photo"));
     await waitFor(() => {
         expect(screen.getByAltText(`Cover of ${spot.name}`).getAttribute("src")).not.toBe(oldSource);
@@ -135,4 +135,25 @@ it("replaces a mounted empty cover after a successful photo upload", async () =>
     fireEvent.click(screen.getByText("Upload photos"));
     expect(await screen.findByAltText(`Cover of ${spot.name}`)).toBeTruthy();
     expect(await screen.findByAltText("ride.png")).toBeTruthy();
+});
+
+it("shows only an add tile initially and reveals upload/cancel after selection", async () => {
+    render(<SpotPhotos spot={spot} currentUser={user} />);
+    await screen.findByAltText("ride.png");
+    expect(screen.getByRole("button", { name: "Add photos", exact: true })).toBeTruthy();
+    expect(screen.queryByText("Upload photos")).toBeNull();
+    const remove = screen.getByRole("button", { name: "Delete photo ride.png" });
+    expect(remove.textContent).toBe("×");
+    expect(remove.title).toBe("Delete photo");
+    fireEvent.click(remove);
+    fireEvent.click(screen.getByText("Cancel"));
+    expect(spotsApi.deleteSpotPhoto).not.toHaveBeenCalled();
+    const input = screen.getByLabelText(/Add photos/);
+    fireEvent.change(input, { target: { files: [new File(["a"], "selected.png", { type: "image/png" })] } });
+    expect(screen.getByText("selected.png")).toBeTruthy();
+    expect(screen.getByText("Upload photos")).toBeTruthy();
+    fireEvent.click(screen.getByText("Cancel"));
+    expect(screen.queryByText("selected.png")).toBeNull();
+    expect(screen.queryByText("Upload photos")).toBeNull();
+    expect(spotsApi.uploadSpotPhoto).not.toHaveBeenCalled();
 });

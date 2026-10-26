@@ -255,6 +255,10 @@ to the operating system's color scheme. A manual preference is saved locally in 
 under `spotfinder.theme`. Theme switching also works for the current visit if that storage
 is unavailable.
 
+Theme and primary activity use the same rounded dropdown control. Arrow keys navigate,
+Enter selects, and Escape dismisses without changing the selection. The activity dropdown
+keeps **Not selected** for clearing the profile's activity when the profile is saved.
+
 Both the main map and location pickers keep their existing OpenStreetMap tile source.
 Dark mode applies a CSS filter to the raster tile pane only; markers, controls, and photos
 retain their own colors. No additional map provider, API key, or subscription is required.
@@ -263,6 +267,12 @@ My spots cards load their covers as they enter the viewport. The cover is the ea
 photo by `createdAt`, with `id` used to break ties. Missing or unavailable photos use a
 placeholder without blocking the card's actions. Spot details reuse the gallery's loaded
 photos for their larger cover. Uploads and deletions refresh mounted list covers.
+
+Photo galleries use three-column thumbnails, corner delete controls with confirmation,
+and an **Add photos** tile. Upload and Cancel appear only after files are selected.
+The full-screen viewer closes on its backdrop, close button, or Escape, restores focus,
+and keeps the underlying spot card open. Nested dialogs share a scroll lock so closing
+either layer cannot leave the page permanently locked.
 
 ## Main Routes
 

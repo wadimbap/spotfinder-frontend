@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { authApi } from "../auth/authApi";
 import type { ActivityType, CurrentUserResponse } from "../auth/authTypes";
 import { getApiError } from "../../shared/api/apiError";
+import { SelectControl } from "../../shared/components/SelectControl";
 
 const ACTIVITY_TYPES: ActivityType[] = ["SKATEBOARDING", "SCOOTER", "BMX", "ROLLERBLADING"];
 
@@ -61,10 +62,9 @@ export function ProfilePage() {
                     <div className="form-field"><label htmlFor="profile-name">Name</label>
                         <input id="profile-name" value={name} minLength={2} maxLength={100} required onChange={(event) => setName(event.target.value)} /></div>
                     <div className="form-field"><label htmlFor="profile-activity">Primary activity</label>
-                        <select id="profile-activity" value={activity} onChange={(event) => setActivity(event.target.value as ActivityType | "")}>
-                            <option value="">Not selected</option>
-                            {ACTIVITY_TYPES.map((value) => <option key={value} value={value}>{value === "BMX" ? "BMX" : value[0] + value.slice(1).toLowerCase()}</option>)}
-                        </select></div>
+                        <SelectControl<ActivityType | ""> id="profile-activity" label="Primary activity" value={activity} disabled={saving} className="activity-control"
+                            options={[{ value: "", label: "Not selected" }, ...ACTIVITY_TYPES.map((value) => ({ value, label: value === "BMX" ? "BMX" : value[0] + value.slice(1).toLowerCase() }))]}
+                            onChange={(value) => { setActivity(value); setSaved(false); }} /></div>
                     <button className="primary-button" disabled={saving}>{saving ? "Saving..." : "Save profile"}</button>
                 </fieldset>
             </form>
