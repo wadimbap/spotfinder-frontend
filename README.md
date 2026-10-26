@@ -294,6 +294,12 @@ photo deletion is available to the photo author, MODERATOR, and ADMIN.
 
 Comments use the existing `/api/v1/comment` API. Replies preserve their parent ID,
 only the comment author can edit text, and the maximum comment length is 3000 characters.
+An **Edited** badge uses `editedAt`, with the edit time in its tooltip. Responses from
+older servers without this field retain the timestamp-based indicator. The delete icon
+is available only to the comment author, moderators, and administrators. Deletion requires
+confirmation and reloads the discussion from the server to preserve replies and reflect
+pruned branches. Deleted parents show a placeholder with no reply, edit, or delete actions.
+An unsent root-comment draft survives deletion confirmation and discussion refresh retries.
 
 `/spots` is the main map page. Spot creation is handled inside the same page through the `Add spot` panel.
 

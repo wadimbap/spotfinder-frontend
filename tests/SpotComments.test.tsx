@@ -1,5 +1,6 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { SpotComments } from "../src/features/comments/SpotComments";
 import { commentsApi } from "../src/features/comments/commentsApi";
 import type { CommentResponse } from "../src/features/comments/commentsTypes";
@@ -7,10 +8,10 @@ import { threadComments } from "../src/features/comments/commentThreads";
 import { spot, user } from "./fixtures";
 
 vi.mock("../src/features/comments/commentsApi", () => ({ commentsApi: {
-    getComments: vi.fn(), createComment: vi.fn(), updateComment: vi.fn(),
+    getComments: vi.fn(), createComment: vi.fn(), updateComment: vi.fn(), deleteComment: vi.fn(),
 } }));
 const root: CommentResponse = { id: 1, parentId: null, text: "Root message", createdByUserId: user.id,
-    createdByDisplayName: "Alex", createdAt: spot.createdAt, updatedAt: spot.createdAt };
+    createdByDisplayName: "Alex", createdAt: spot.createdAt, updatedAt: spot.createdAt, editedAt: null, deletedAt: null };
 const reply: CommentResponse = { ...root, id: 2, parentId: 1, text: "A reply", createdByUserId: "other", createdByDisplayName: "Sam" };
 
 beforeEach(() => { vi.resetAllMocks(); vi.mocked(commentsApi.getComments).mockResolvedValue([reply, root]); });
@@ -49,7 +50,7 @@ it("sends replies with the selected parent's numeric ID", async () => {
 
 it("updates only ID and text and preserves the draft after a forbidden response", async () => {
     vi.mocked(commentsApi.updateComment).mockRejectedValueOnce({ isAxiosError: true, response: { status: 403 } })
-        .mockResolvedValueOnce({ ...root, text: "Edited text", updatedAt: "2026-10-25T12:00:00Z" });
+        .mockResolvedValueOnce({ ...root, text: "Edited text", updatedAt: "2026-10-25T12:00:00Z", editedAt: "2026-10-25T12:00:00Z" });
     render(<SpotComments spotId={spot.id} currentUser={user} />);
     fireEvent.click(await screen.findByText("Edit comment"));
     fireEvent.change(screen.getByLabelText("Edit your comment"), { target: { value: "Edited text" } });
@@ -123,4 +124,182 @@ it("accepts the 3000-character boundary", async () => {
     fireEvent.click(screen.getByText("Add comment"));
     await vi.waitFor(() => expect(commentsApi.createComment).toHaveBeenCalledWith(spot.id, { parentCommentId: null, text }));
     await screen.findByText(text);
+});
+
+it("shows deletion only for own comments to regular users", async () => {
+    render(<SpotComments spotId={spot.id} currentUser={user} />);
+    await screen.findByText("Root message");
+
+    expect(within(screen.getByRole("article", { name: "Comment by Alex" })).getByRole("button", { name: "Delete comment", exact: true })).toBeTruthy();
+    expect(within(screen.getByRole("article", { name: "Comment by Sam" })).queryByRole("button", { name: "Delete comment", exact: true })).toBeNull();
+});
+
+it.each(["MODERATOR", "ADMIN"] as const)("allows %s to delete others but not edit them", async (role) => {
+    render(<SpotComments spotId={spot.id} currentUser={{ ...user, role }} />);
+    await screen.findByText("A reply");
+    const other = within(screen.getByRole("article", { name: "Comment by Sam" }));
+
+    expect(other.getByRole("button", { name: "Delete comment", exact: true })).toBeTruthy();
+    expect(other.queryByText("Edit comment")).toBeNull();
+});
+
+it("confirms deletion and preserves replies under a tombstone without exposing erased text", async () => {
+    render(<SpotComments spotId={spot.id} currentUser={user} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Delete comment", exact: true }));
+    expect(commentsApi.deleteComment).not.toHaveBeenCalled();
+    vi.mocked(commentsApi.deleteComment).mockResolvedValue();
+    vi.mocked(commentsApi.getComments).mockResolvedValue([
+        { ...root, text: "", deletedAt: "2026-10-26T10:00:00Z" }, reply,
+    ]);
+
+    fireEvent.click(screen.getByText("Confirm deletion"));
+
+    await screen.findByText("Комментарий удалён");
+    expect(commentsApi.deleteComment).toHaveBeenCalledWith(1);
+    expect(screen.queryByText("Root message")).toBeNull();
+    expect(screen.getByText("A reply")).toBeTruthy();
+    expect(screen.getByText("Alex (You)")).toBeTruthy();
+    const tombstone = within(screen.getByRole("article", { name: "Comment by Alex" }));
+    expect(tombstone.queryByText("Reply")).toBeNull();
+    expect(tombstone.queryByText("Edit comment")).toBeNull();
+    expect(tombstone.queryByRole("button", { name: "Delete comment", exact: true })).toBeNull();
+});
+
+it("reloads the server list so pruned ancestors disappear and neighbouring discussions survive", async () => {
+    const deletedRoot = { ...root, text: "", deletedAt: "2026-10-26T10:00:00Z" };
+    const ownReply = { ...reply, createdByUserId: user.id };
+    const neighbour = { ...root, id: 3, text: "Neighbour", createdByUserId: "other", createdByDisplayName: "Other" };
+    vi.mocked(commentsApi.getComments).mockResolvedValueOnce([deletedRoot, ownReply, neighbour]);
+    render(<SpotComments spotId={spot.id} currentUser={user} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Delete comment", exact: true }));
+    vi.mocked(commentsApi.deleteComment).mockResolvedValue();
+    vi.mocked(commentsApi.getComments).mockResolvedValue([neighbour]);
+
+    fireEvent.click(screen.getByText("Confirm deletion"));
+
+    await waitFor(() => expect(screen.queryByText("Комментарий удалён")).toBeNull());
+    expect(screen.queryByText("A reply")).toBeNull();
+    expect(screen.getByText("Neighbour")).toBeTruthy();
+});
+
+it("does not mark deletion or an unchanged save as an edit", async () => {
+    vi.mocked(commentsApi.getComments).mockResolvedValue([
+        { ...root, updatedAt: "2026-10-26T10:00:00Z", editedAt: null },
+        { ...reply, deletedAt: "2026-10-26T10:00:00Z", editedAt: "2026-10-25T10:00:00Z" },
+    ]);
+    render(<SpotComments spotId={spot.id} currentUser={user} />);
+    await screen.findByText("Комментарий удалён");
+
+    expect(screen.queryByText("Edited")).toBeNull();
+});
+
+it("retains the comment and permits retry after a failed delete", async () => {
+    vi.mocked(commentsApi.deleteComment).mockRejectedValueOnce({ isAxiosError: true, response: { status: 403 } })
+        .mockResolvedValueOnce();
+    render(<SpotComments spotId={spot.id} currentUser={user} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Delete comment", exact: true }));
+    fireEvent.click(screen.getByText("Confirm deletion"));
+    await screen.findByText(/do not have permission/);
+    expect(screen.getByText("Root message")).toBeTruthy();
+    vi.mocked(commentsApi.getComments).mockResolvedValue([reply, { ...root, text: "", deletedAt: "2026-10-26T10:00:00Z" }]);
+
+    fireEvent.click(screen.getByText("Confirm deletion"));
+
+    await screen.findByText("Комментарий удалён");
+    expect(commentsApi.deleteComment).toHaveBeenCalledTimes(2);
+});
+
+it("keeps the list unchanged when deletion is cancelled", async () => {
+    render(<SpotComments spotId={spot.id} currentUser={user} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Delete comment", exact: true }));
+    fireEvent.click(screen.getByText("Cancel"));
+
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(commentsApi.deleteComment).not.toHaveBeenCalled();
+    expect(screen.getByText("Root message")).toBeTruthy();
+});
+
+it("blocks repeated deletions while the first request is pending", async () => {
+    let finish!: () => void;
+    vi.mocked(commentsApi.deleteComment).mockReturnValue(new Promise<void>((resolve) => { finish = resolve; }));
+    render(<SpotComments spotId={spot.id} currentUser={user} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Delete comment", exact: true }));
+    fireEvent.click(screen.getByText("Confirm deletion"));
+    fireEvent.click(screen.getByText("Deleting..."));
+    expect(commentsApi.deleteComment).toHaveBeenCalledOnce();
+    vi.mocked(commentsApi.getComments).mockResolvedValue([]);
+    finish();
+    await screen.findByText(/No comments yet/);
+});
+
+it("does not show stale text after deletion succeeds but reloading fails", async () => {
+    vi.mocked(commentsApi.deleteComment).mockResolvedValue();
+    render(<SpotComments spotId={spot.id} currentUser={user} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Delete comment", exact: true }));
+    vi.mocked(commentsApi.getComments).mockRejectedValue({ isAxiosError: true, response: { status: 500 } });
+
+    fireEvent.click(screen.getByText("Confirm deletion"));
+
+    await screen.findByText(/Comment deleted, but the discussion could not be refreshed/);
+    expect(screen.queryByText("Root message")).toBeNull();
+});
+
+it("renders an edited badge from editedAt even when the generic timestamps match", async () => {
+    const editedAt = "2026-10-26T12:00:00Z";
+    vi.mocked(commentsApi.getComments).mockResolvedValue([{ ...root, editedAt }]);
+    render(<SpotComments spotId={spot.id} currentUser={user} />);
+    const badge = await screen.findByText("Edited");
+    expect(badge.classList.contains("comment-edited-badge")).toBe(true);
+    expect(badge.title).toBe(`Edited ${new Date(editedAt).toLocaleString()}`);
+    const remove = screen.getByRole("button", { name: "Delete comment", exact: true });
+    expect(remove.title).toBe("Delete comment");
+    expect(remove.querySelector("svg")).toBeTruthy();
+});
+
+it("retains edited indicators for legacy responses without editedAt", async () => {
+    const legacy = { ...root, updatedAt: "2026-10-26T12:00:00Z" };
+    delete legacy.editedAt;
+    vi.mocked(commentsApi.getComments).mockResolvedValue([legacy]);
+    render(<SpotComments spotId={spot.id} currentUser={user} />);
+    expect(await screen.findByText("Edited")).toBeTruthy();
+});
+
+it("shows no deletion controls before the current user has loaded", async () => {
+    render(<SpotComments spotId={spot.id} currentUser={null} />);
+    await screen.findByText("Root message");
+    expect(screen.queryByRole("button", { name: "Delete comment", exact: true })).toBeNull();
+});
+
+it("closes only deletion confirmation with Escape and restores focus to its trash button", async () => {
+    const keyboard = userEvent.setup();
+    render(<SpotComments spotId={spot.id} currentUser={user} />);
+    const remove = await screen.findByRole("button", { name: "Delete comment", exact: true });
+    await keyboard.click(remove);
+    const confirmation = screen.getByRole("alertdialog", { name: "Delete comment" });
+    expect(confirmation.parentElement?.parentElement).toBe(document.body);
+    await keyboard.keyboard("{Escape}");
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(document.activeElement).toBe(remove);
+    expect(screen.getByText("Root message")).toBeTruthy();
+    expect(commentsApi.deleteComment).not.toHaveBeenCalled();
+});
+
+it("keeps the draft through cancellation and a post-delete reload failure and retry", async () => {
+    vi.mocked(commentsApi.deleteComment).mockResolvedValue();
+    render(<SpotComments spotId={spot.id} currentUser={user} />);
+    const input = await screen.findByLabelText("Your comment");
+    fireEvent.change(input, { target: { value: "Keep my draft" } });
+    fireEvent.click(screen.getByRole("button", { name: "Delete comment", exact: true }));
+    fireEvent.click(screen.getByText("Cancel"));
+    expect((input as HTMLTextAreaElement).value).toBe("Keep my draft");
+    fireEvent.click(screen.getByRole("button", { name: "Delete comment", exact: true }));
+    vi.mocked(commentsApi.getComments).mockRejectedValueOnce(new Error("offline")).mockResolvedValueOnce([reply]);
+    fireEvent.click(screen.getByText("Confirm deletion"));
+    await screen.findByText(/Comment deleted, but the discussion could not be refreshed/);
+    expect((screen.getByLabelText("Your comment") as HTMLTextAreaElement).value).toBe("Keep my draft");
+    expect((input as HTMLTextAreaElement).disabled).toBe(true);
+    fireEvent.click(screen.getByText("Retry comments"));
+    await screen.findByText("A reply");
+    expect((screen.getByLabelText("Your comment") as HTMLTextAreaElement).value).toBe("Keep my draft");
+    expect((input as HTMLTextAreaElement).disabled).toBe(false);
 });

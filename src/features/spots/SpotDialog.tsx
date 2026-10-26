@@ -2,26 +2,26 @@ import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { lockBodyScroll } from "../../shared/components/scrollLock";
 
-interface Props { children: ReactNode; onClose: () => void; label?: string }
+interface Props { children: ReactNode; onClose: () => void; label?: string; role?: "dialog" | "alertdialog"; describedBy?: string; returnFocus?: HTMLElement | null }
 
-export function SpotDialog({ children, onClose, label = "Spot details" }: Props) {
+export function SpotDialog({ children, onClose, label = "Spot details", role = "dialog", describedBy, returnFocus }: Props) {
     const container = useRef<HTMLDivElement>(null);
     useEffect(() => {
-        const previous = document.activeElement as HTMLElement | null;
+        const previous = returnFocus ?? (document.activeElement as HTMLElement | null);
         const unlockScroll = lockBodyScroll();
         container.current?.focus();
         return () => {
             unlockScroll();
             previous?.focus();
         };
-    }, []);
+    }, [returnFocus]);
 
     return (
         <div className="spot-dialog-backdrop" onClick={(event) => {
             if (event.target === event.currentTarget) onClose();
         }}>
-            <div ref={container} className="spot-dialog" role="dialog" aria-modal="true"
-                aria-label={label} tabIndex={-1} onKeyDown={(event) => {
+            <div ref={container} className="spot-dialog" role={role} aria-modal="true"
+                aria-label={label} aria-describedby={describedBy} tabIndex={-1} onKeyDown={(event) => {
                     if (event.key === "Escape") { event.stopPropagation(); onClose(); }
                     if (event.key !== "Tab") return;
                     const elements = Array.from(container.current?.querySelectorAll<HTMLElement>(

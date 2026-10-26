@@ -1279,3 +1279,14 @@ h1, h2, h3, p { overflow-wrap: anywhere; }
   .theme-control .select-trigger { min-width: 80px; }
 }
 .select-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.comment-edited-badge { display: inline-flex; align-items: center; padding: 1px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-muted); color: var(--muted); font-size: 10px; line-height: 1.5; white-space: nowrap; }
+.comment-meta { align-items: center; }
+.comment-meta-with-actions { position: relative; padding-right: 32px; min-height: 28px; }
+.comment-delete-button { position: absolute; top: 0; right: 0; display: grid; place-items: center; width: 28px; height: 28px; padding: 5px; border: 0; border-radius: 7px; color: var(--muted); background: transparent; cursor: pointer; }
+.comment-delete-button svg { width: 16px; height: 16px; }
+.comment-delete-button:hover:not(:disabled) { color: var(--danger); background: var(--danger-soft); }
+.comment-deleted .comment-text { color: var(--muted); font-style: italic; }
+.comment-delete-dialog { padding: 22px; }
+.comment-delete-dialog h2 { margin-top: 0; }
+.comment-delete-dialog p { font-size: 14px; color: var(--text-secondary); }
+.comment-delete-dialog .action-row { justify-content: flex-end; }

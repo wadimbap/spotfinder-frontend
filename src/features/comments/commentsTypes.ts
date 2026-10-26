@@ -6,6 +6,8 @@ export interface CommentResponse {
     createdByDisplayName: string;
     createdAt: string;
     updatedAt: string;
+    editedAt?: string | null;
+    deletedAt?: string | null;
 }
 
 export interface CreateCommentRequest { parentCommentId: number | null; text: string }

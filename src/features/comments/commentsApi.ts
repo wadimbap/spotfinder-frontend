@@ -14,4 +14,7 @@ export const commentsApi = {
         const response = await apiClient.put<CommentResponse>("/api/v1/comment", request);
         return response.data;
     },
+    async deleteComment(commentId: number): Promise<void> {
+        await apiClient.delete(`/api/v1/comment/${commentId}`);
+    },
 };
