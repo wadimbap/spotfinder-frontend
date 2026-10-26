@@ -6,6 +6,7 @@ import { SpotDetailsPanel } from "./SpotDetailsPanel";
 import { SpotDialog } from "./SpotDialog";
 import { getApiError } from "../../shared/api/apiError";
 import { EditSpotPanel } from "./EditSpotPanel";
+import { SpotCover } from "./SpotCover";
 
 export function MySpotsPage() {
     const [spots, setSpots] = useState<SpotResponse[]>([]);
@@ -42,13 +43,17 @@ export function MySpotsPage() {
                 <button className="secondary-button" onClick={() => setReload((value) => value + 1)}>Retry</button></div>}
             {!loading && !error && spots.length === 0 && <p className="page-card">You have not added any spots yet.</p>}
             {!loading && !error && <div className="spots-grid">{spots.map((spot) => (
-                <article key={spot.id} className="spot-card">
-                    <div className="spot-card-header"><h2>{spot.name}</h2>
+                <article key={spot.id} className="spot-card spot-card-with-cover">
+                    <div className="spot-card-media"><SpotCover spotId={spot.id} name={spot.name} />
                         <strong className={spot.approved ? "approved-badge" : "pending-badge"}>{spot.approved ? "Approved" : "Pending"}</strong></div>
+                    <div className="spot-card-body">
+                    <div className="spot-card-header"><h2>{spot.name}</h2></div>
+                    <span className="spot-type-badge">{spot.type === "SKATEPARK" ? "Skatepark" : "Street"}</span>
                     <p className="spot-description">{spot.description}</p>
-                    <p className="field-help">{spot.latitude}, {spot.longitude}</p>
+                    <p className="field-help spot-coordinates">{spot.latitude}, {spot.longitude}</p>
                     <div className="action-row"><button className="secondary-button" onClick={() => setSelected(spot)}>View details</button>
                         {!spot.approved && <button className="secondary-button" onClick={() => setEditing(spot)}>Edit spot</button>}</div>
+                    </div>
                 </article>
             ))}</div>}
             {selected && <SpotDialog onClose={() => setSelected(null)}>

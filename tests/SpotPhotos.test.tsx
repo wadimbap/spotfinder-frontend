@@ -1,6 +1,7 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { SpotPhotos } from "../src/features/spots/SpotPhotos";
+import { SpotCover } from "../src/features/spots/SpotCover";
 import { spotsApi } from "../src/features/spots/spotsApi";
 import { spot, user } from "./fixtures";
 
@@ -76,4 +77,62 @@ it("does not create a Blob URL when a download finishes after unmount", async ()
     view.unmount(); resolve(new Blob(["late"]));
     await Promise.resolve();
     expect(URL.createObjectURL).not.toHaveBeenCalled();
+});
+
+it("uses the earliest photo as the large cover, opens it, and replaces it after deletion", async () => {
+    const second = { ...photo, id: "second", originalFilename: "second.png", createdAt: "2026-10-26T10:00:00Z" };
+    vi.mocked(spotsApi.getSpotPhotos).mockResolvedValue([second, photo]);
+    vi.mocked(URL.createObjectURL).mockReturnValueOnce("blob:first").mockReturnValueOnce("blob:second");
+    vi.mocked(spotsApi.deleteSpotPhoto).mockResolvedValue();
+    render(<SpotPhotos spot={spot} currentUser={user} showCover><h1>{spot.name}</h1></SpotPhotos>);
+    const cover = await screen.findByRole("button", { name: `View cover photo of ${spot.name}` });
+    expect(cover.querySelector("img")?.src).toBe("blob:first");
+    expect(spotsApi.getSpotPhotoContent).toHaveBeenCalledTimes(2);
+    fireEvent.click(cover);
+    expect(screen.getByRole("dialog", { name: "Photo viewer" })).toBeTruthy();
+    fireEvent.click(screen.getByLabelText("Close photo"));
+    fireEvent.click(screen.getAllByText("Delete photo")[0]);
+    fireEvent.click(screen.getByText("Confirm delete photo"));
+    await waitFor(() => expect(cover.querySelector("img")?.src).toBe("blob:second"));
+    expect(spotsApi.getSpotPhotos).toHaveBeenCalledTimes(1);
+});
+
+it("shows an unavailable cover when the earliest photo fails, while retaining other gallery photos", async () => {
+    vi.mocked(spotsApi.getSpotPhotos).mockResolvedValue([photo, { ...photo, id: "second", originalFilename: "second.png", createdAt: "2026-10-26T10:00:00Z" }]);
+    vi.mocked(spotsApi.getSpotPhotoContent).mockRejectedValueOnce(new Error("offline")).mockResolvedValueOnce(new Blob(["second"]));
+    render(<SpotPhotos spot={spot} currentUser={user} showCover />);
+    expect(await screen.findByText("Photo unavailable")).toBeTruthy();
+    expect(screen.getByAltText("second.png")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /View cover photo/ })).toBeNull();
+});
+
+it("refreshes a mounted list cover when the gallery deletes its first photo", async () => {
+    let photos = [photo, { ...photo, id: "second", originalFilename: "second.png", createdAt: "2026-10-26T10:00:00Z" }];
+    vi.mocked(spotsApi.getSpotPhotos).mockImplementation(async () => [...photos]);
+    vi.mocked(spotsApi.deleteSpotPhoto).mockImplementation(async (_spotId, id) => { photos = photos.filter((item) => item.id !== id); });
+    let sequence = 0;
+    vi.mocked(URL.createObjectURL).mockImplementation(() => `blob:photo-${++sequence}`);
+    render(<><SpotCover spotId={spot.id} name={spot.name} /><SpotPhotos spot={spot} currentUser={user} /></>);
+    const cover = await screen.findByAltText(`Cover of ${spot.name}`);
+    const oldSource = cover.getAttribute("src");
+    await screen.findByAltText("second.png");
+    fireEvent.click(screen.getAllByText("Delete photo")[0]);
+    fireEvent.click(screen.getByText("Confirm delete photo"));
+    await waitFor(() => {
+        expect(screen.getByAltText(`Cover of ${spot.name}`).getAttribute("src")).not.toBe(oldSource);
+    });
+    expect(spotsApi.getSpotPhotoContent).toHaveBeenLastCalledWith(spot.id, "second");
+});
+
+it("replaces a mounted empty cover after a successful photo upload", async () => {
+    let photos: typeof photo[] = [];
+    vi.mocked(spotsApi.getSpotPhotos).mockImplementation(async () => [...photos]);
+    vi.mocked(spotsApi.uploadSpotPhoto).mockImplementation(async () => { photos = [photo]; return photo; });
+    render(<><SpotCover spotId={spot.id} name={spot.name} /><SpotPhotos spot={spot} currentUser={user} /></>);
+    await screen.findByText("No photo yet");
+    await screen.findByText("No photos yet.");
+    fireEvent.change(screen.getByLabelText(/Add photos/), { target: { files: [new File(["photo"], "ride.png", { type: "image/png" })] } });
+    fireEvent.click(screen.getByText("Upload photos"));
+    expect(await screen.findByAltText(`Cover of ${spot.name}`)).toBeTruthy();
+    expect(await screen.findByAltText("ride.png")).toBeTruthy();
 });

@@ -62,12 +62,16 @@ export function SpotDetailsPanel({ spot: initialSpot, onClose, source = "public"
         return () => { active = false; };
     }, [initialSpot.id, initialSpot.approved, source, retry]);
 
-    return <section className="spots-panel">
-        <div className="spots-panel-header"><div><h1>{loading || error ? "Spot details" : spot.name}</h1>
-            {!loading && !error && <span className="spot-type-badge">{formatLabel(spot.type)}</span>}</div>
-            <button type="button" aria-label="Close spot details" className="panel-close-button" onClick={onClose}>×</button></div>
+    return <section className="spots-panel spot-details-panel">
+        <button type="button" aria-label="Close spot details" className="panel-close-button detail-close-button" onClick={onClose}>×</button>
+        {(loading || error) && <div className="spots-panel-header"><h1>Spot details</h1></div>}
         {loading ? <p role="status">Loading spot...</p> : error ? <div role="alert"><p className="error-message">{error}</p>
             <button className="secondary-button" onClick={() => setRetry((value) => value + 1)}>Retry spot</button></div> : <>
+            <SpotPhotos key={spot.id} spot={spot} currentUser={currentUser} showCover>
+            <div className="spots-panel-header"><div><h1>{spot.name}</h1>
+                <div className="spot-detail-badges"><span className="spot-type-badge">{formatLabel(spot.type)}</span>
+                    <strong className={spot.approved ? "approved-badge" : "pending-badge"}>{spot.approved ? "Approved" : "Pending"}</strong></div>
+            </div></div>
             {spot.description && <p className="spot-description">{spot.description}</p>}
             <div className="spot-status-row"><span>Status</span><strong>{spot.approved ? "Approved" : "Pending moderation"}</strong></div>
             <div className="spot-status-row"><span>Location</span><strong>{spot.latitude}, {spot.longitude}</strong></div>
@@ -75,7 +79,7 @@ export function SpotDetailsPanel({ spot: initialSpot, onClose, source = "public"
                 {spot.features.map((feature) => <span key={feature} className="feature-chip-static">{formatLabel(feature)}</span>)}</div></div>}
             {accountError && <div role="alert"><p className="error-message">{accountError}</p>
                 <button className="secondary-button" onClick={() => setRetry((value) => value + 1)}>Retry account</button></div>}
-            <SpotPhotos key={spot.id} spot={spot} currentUser={currentUser} />
+            </SpotPhotos>
             <SpotComments key={`comments-${spot.id}`} spotId={spot.id} currentUser={currentUser} />
             {source === "admin" && !spot.approved && (currentUser?.role === "MODERATOR" || currentUser?.role === "ADMIN")
                 && <ModerationActions spotId={spot.id} onDone={onModerated ?? (() => onClose())} />}

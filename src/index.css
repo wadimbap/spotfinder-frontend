@@ -1109,8 +1109,34 @@ h1, h2, h3, p { overflow-wrap: anywhere; }
 .spot-description, .admin-spot-description { font-size: 14px; }
 .spot-status-row { font-size: 13px; gap: 16px; }
 .spot-status-row strong { min-width: 0; overflow-wrap: anywhere; }
+.spot-detail-badges { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.spot-detail-badges .spot-type-badge { margin: 0; }
 .approved-badge, .pending-badge { display: inline-flex; align-items: center; width: fit-content; font-weight: 650; white-space: nowrap; }
 .spot-type-badge, .feature-chip, .feature-chip-static { font-weight: 550; font-size: 12px; }
+.spot-details-panel { position: absolute; }
+.detail-close-button { position: absolute; z-index: 2; right: 12px; top: 12px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+.spot-details-panel > .spots-panel-header { padding-right: 30px; }
+.spot-detail-cover { margin: -11px -11px 20px; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: var(--surface-muted); }
+.spot-detail-cover-button { display: block; width: 100%; height: 100%; border: 0; padding: 0; cursor: zoom-in; background: var(--surface-muted); }
+.spot-detail-cover-button img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.spot-dialog .spot-details-panel { position: relative; }
+.photo-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 100%; background: var(--surface-muted); color: var(--muted); font-size: 13px; }
+.photo-placeholder svg { width: 42px; height: 42px; opacity: .7; }
+.photo-placeholder-loading svg { opacity: .35; }
+.spots-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 22px; }
+.spot-card-with-cover { display: flex; flex-direction: column; padding: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); min-width: 0; }
+.spot-card-media { position: relative; }
+.spot-cover { aspect-ratio: 16 / 10; overflow: hidden; background: var(--surface-muted); }
+.spot-cover > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.spot-card-media > strong { position: absolute; top: 12px; left: 12px; box-shadow: 0 2px 8px rgb(0 0 0 / 10%); }
+.spot-card-body { display: flex; flex: 1; flex-direction: column; align-items: flex-start; padding: 20px; }
+.spot-card-header h2 { font-size: 18px; line-height: 1.3; letter-spacing: -.3px; }
+.spot-card-body .spot-description { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; margin-bottom: 18px; }
+.spot-coordinates { margin-top: auto; font-size: 12px; }
+.spot-card-body .action-row { width: 100%; margin-top: 0; flex-wrap: wrap; }
+.spot-card-body .action-row button { flex: 1; }
+.spot-card-body .action-row button:first-child { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.spot-card-body .action-row button:first-child:hover { background: var(--accent-hover); }
 .profile-page { max-width: 800px; }
 .profile-heading { text-align: center; margin: 8px 0 28px; }
 .profile-heading h1 { margin: 0 0 6px; }
@@ -1122,6 +1148,14 @@ h1, h2, h3, p { overflow-wrap: anywhere; }
 .profile-identity strong { font-size: 18px; overflow-wrap: anywhere; }
 .profile-card .info-row { flex-wrap: wrap; font-size: 14px; }
 .profile-card .info-row strong { overflow-wrap: anywhere; min-width: 0; }
+.spot-photo { display: block; height: 110px; border-radius: 8px; transition: none; }
+.spot-photo-button { display: block; width: 100%; }
+.spot-photo-button:hover .spot-photo { transform: none; box-shadow: none; outline: 2px solid var(--accent-text); }
+.spot-photos-grid > div { min-width: 0; }
+.spot-photos-grid > div > .secondary-button { font-size: 12px; margin-top: 6px; }
+.spot-photo-upload { padding: 14px; font-size: 13px; }
+.spot-photo-upload input { width: 100%; min-width: 0; }
+.spot-photo-upload input::file-selector-button { border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); padding: 8px; margin-right: 10px; cursor: pointer; }
 .comment { border-radius: 10px; border: 1px solid var(--border); }
 .comment-meta { font-size: 12px; }
 .comment-text { font-size: 14px; }
@@ -1158,6 +1192,7 @@ h1, h2, h3, p { overflow-wrap: anywhere; }
   .page-header h1, .profile-heading h1 { font-size: 26px; }
   .spots-panel { width: auto; max-width: none; padding: 20px; max-height: min(65dvh, calc(100dvh - var(--app-header-height) - 64px)); }
   .spot-dialog .spots-panel { max-height: calc(100dvh - 24px); }
+  .spot-detail-cover { margin: -9px -9px 18px; }
   .spot-dialog { max-height: calc(100dvh - 24px); }
   .profile-card { padding: 22px; }
   .profile-identity { gap: 12px; }

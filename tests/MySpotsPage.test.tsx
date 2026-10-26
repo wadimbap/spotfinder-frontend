@@ -5,10 +5,10 @@ import { MySpotsPage } from "../src/features/spots/MySpotsPage";
 import { spotsApi } from "../src/features/spots/spotsApi";
 import { spot } from "./fixtures";
 
-vi.mock("../src/features/spots/spotsApi", () => ({ spotsApi: { getMySpots: vi.fn() } }));
+vi.mock("../src/features/spots/spotsApi", () => ({ spotsApi: { getMySpots: vi.fn(), getSpotPhotos: vi.fn() } }));
 vi.mock("../src/features/spots/SpotDetailsPanel", () => ({ SpotDetailsPanel: () => <p>Opened details</p> }));
 
-beforeEach(() => vi.resetAllMocks());
+beforeEach(() => { vi.resetAllMocks(); vi.mocked(spotsApi.getSpotPhotos).mockResolvedValue([]); });
 
 it("shows both statuses and opens a pending card", async () => {
     vi.mocked(spotsApi.getMySpots).mockResolvedValue([spot, { ...spot, id: "pending", name: "My draft", approved: false }]);

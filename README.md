@@ -259,6 +259,11 @@ Both the main map and location pickers keep their existing OpenStreetMap tile so
 Dark mode applies a CSS filter to the raster tile pane only; markers, controls, and photos
 retain their own colors. No additional map provider, API key, or subscription is required.
 
+My spots cards load their covers as they enter the viewport. The cover is the earliest
+photo by `createdAt`, with `id` used to break ties. Missing or unavailable photos use a
+placeholder without blocking the card's actions. Spot details reuse the gallery's loaded
+photos for their larger cover. Uploads and deletions refresh mounted list covers.
+
 ## Main Routes
 
 ```text
