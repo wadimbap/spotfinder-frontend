@@ -5,9 +5,10 @@ import "leaflet/dist/leaflet.css";
 
 import { router } from "./app/router";
 import "./index.css";
+import { ThemeProvider } from "./shared/theme/ThemeProvider";
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
-        <RouterProvider router={router} />
+        <ThemeProvider><RouterProvider router={router} /></ThemeProvider>
     </StrictMode>,
 );

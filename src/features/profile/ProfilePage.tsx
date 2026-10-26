@@ -50,10 +50,11 @@ export function ProfilePage() {
     }
 
     if (loading) return <p className="page-message" role="status">Loading profile...</p>;
-    return <div className="page"><div className="page-card">
-        <h1>Profile</h1>
+    return <div className="page profile-page"><div className="profile-heading"><h1>Profile</h1><p>Manage your profile details.</p></div><div className="page-card profile-card">
         {error && <p className="error-message" role="alert">{error}</p>}
         {!user ? <button className="secondary-button" onClick={() => setRetry((value) => value + 1)}>Retry</button> : <>
+            <div className="profile-identity"><span className="profile-initials" aria-hidden="true">{user.displayName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span>
+                <div><strong>{user.displayName}</strong><span className="app-user-role">{user.role}</span></div></div>
             <div className="info-row"><span>Email</span><strong>{user.email}</strong></div>
             <form onSubmit={(event) => void save(event)} className="profile-form">
                 <fieldset disabled={saving} className="form-fields" onChange={() => setSaved(false)}>
@@ -62,7 +63,7 @@ export function ProfilePage() {
                     <div className="form-field"><label htmlFor="profile-activity">Primary activity</label>
                         <select id="profile-activity" value={activity} onChange={(event) => setActivity(event.target.value as ActivityType | "")}>
                             <option value="">Not selected</option>
-                            {ACTIVITY_TYPES.map((value) => <option key={value} value={value}>{value.replaceAll("_", " ")}</option>)}
+                            {ACTIVITY_TYPES.map((value) => <option key={value} value={value}>{value === "BMX" ? "BMX" : value[0] + value.slice(1).toLowerCase()}</option>)}
                         </select></div>
                     <button className="primary-button" disabled={saving}>{saving ? "Saving..." : "Save profile"}</button>
                 </fieldset>

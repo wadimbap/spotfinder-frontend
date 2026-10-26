@@ -247,6 +247,18 @@ VITE_API_BASE_URL
 
 Authenticated requests use JWT Bearer token.
 
+## Appearance
+
+The theme control is available in the application header and on the login and registration
+pages. Choose **System**, **Light**, or **Dark**. System is the default and follows changes
+to the operating system's color scheme. A manual preference is saved locally in the browser
+under `spotfinder.theme`. Theme switching also works for the current visit if that storage
+is unavailable.
+
+Both the main map and location pickers keep their existing OpenStreetMap tile source.
+Dark mode applies a CSS filter to the raster tile pane only; markers, controls, and photos
+retain their own colors. No additional map provider, API key, or subscription is required.
+
 ## Main Routes
 
 ```text

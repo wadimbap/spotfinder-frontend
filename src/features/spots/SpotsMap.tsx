@@ -135,6 +135,8 @@ export function SpotsMap({
             {spots.map((spot) => (
                 <Marker
                     key={spot.id}
+                    title={spot.name}
+                    alt={spot.name}
                     position={[spot.latitude, spot.longitude]}
                     icon={getSpotMarkerIcon(spot.approved)}
                     eventHandlers={{

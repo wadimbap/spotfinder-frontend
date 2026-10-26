@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { authApi } from "./authApi";
 import { tokenStorage } from "../../shared/auth/tokenStorage";
+import { ThemeControl } from "../../shared/theme/ThemeControl";
 
 export function RegisterPage() {
     const navigate = useNavigate();
@@ -42,7 +43,9 @@ export function RegisterPage() {
 
     return (
         <div className="auth-page">
+            <div className="auth-theme-control"><ThemeControl /></div>
             <div className="auth-card">
+                <p className="auth-brand">SpotFinder</p>
                 <h1>Create account</h1>
 
                 <form onSubmit={handleSubmit}>
