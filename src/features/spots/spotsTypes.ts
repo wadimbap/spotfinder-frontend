@@ -50,6 +50,12 @@ export interface SpotMetadataResponse {
     features: SpotFeature[];
 }
 
+export interface SpotSearchFilters {
+    query?: string;
+    types?: SpotType[];
+    features?: SpotFeature[];
+}
+
 export interface SpotPhotoResponse {
     id: string;
     spotId: string;

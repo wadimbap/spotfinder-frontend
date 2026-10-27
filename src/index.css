@@ -545,6 +545,14 @@ a:hover {
   z-index: 500;
 }
 
+.spot-filters-panel { display: grid; gap: 14px; }
+.spot-filters-panel .spots-panel-header { margin-bottom: 2px; }
+.spot-filter-group { display: grid; gap: 10px; margin: 0; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-muted); }
+.spot-filter-group legend { padding-inline: 4px; font-size: 14px; font-weight: 700; }
+.spot-filter-group .field-help { margin: -2px 0 0; }
+.spot-filter-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.spot-filter-options label { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 13px; }
+
 .spots-map-error {
   position: absolute;
   left: 20px;

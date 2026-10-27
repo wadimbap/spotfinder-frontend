@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { SpotsPage } from "../src/features/spots/SpotsPage";
 import { spotsApi } from "../src/features/spots/spotsApi";
@@ -14,7 +14,9 @@ beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(authApi.getCurrentUser).mockResolvedValue(user);
     vi.mocked(spotsApi.getApprovedSpots).mockResolvedValue([spot]);
-    vi.mocked(spotsApi.getMetadata).mockResolvedValue({ types: ["STREET"], features: ["FLAT"] });
+    vi.mocked(spotsApi.getMetadata).mockResolvedValue({
+        types: ["STREET", "SKATEPARK"], features: ["FLAT", "RAIL", "LIGHTING", "COVERED"],
+    });
 });
 
 it("keeps the map usable when only metadata fails", async () => {
@@ -33,4 +35,28 @@ it("does not fall back to ordinary creation for an unauthorized approved-create 
 it("opens ordinary creation directly from the my-spots link", async () => {
     render(<MemoryRouter initialEntries={["/spots?create=pending"]}><SpotsPage /></MemoryRouter>);
     expect(await screen.findByRole("button", { name: "Create spot" })).toBeTruthy();
+});
+
+it("sends selected map filters to the spots API", async () => {
+    render(<MemoryRouter><SpotsPage /></MemoryRouter>);
+    await screen.findByText(spot.name);
+    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Street" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Rail" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Lighting" }));
+
+    await waitFor(() => expect(spotsApi.getApprovedSpots).toHaveBeenLastCalledWith({
+        query: "", types: ["STREET"], features: ["RAIL", "LIGHTING"],
+    }));
+});
+
+it("searches spots by name after typing stops", async () => {
+    render(<MemoryRouter><SpotsPage /></MemoryRouter>);
+    await screen.findByText(spot.name);
+    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "central" } });
+
+    await waitFor(() => expect(spotsApi.getApprovedSpots).toHaveBeenLastCalledWith({
+        query: "central", types: [], features: [],
+    }), { timeout: 1000 });
 });

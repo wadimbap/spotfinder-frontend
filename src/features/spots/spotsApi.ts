@@ -4,6 +4,7 @@ import type {
     SpotMetadataResponse,
     SpotPhotoResponse,
     SpotResponse,
+    SpotSearchFilters,
     UpdateSpotRequest,
 } from "./spotsTypes";
 
@@ -24,8 +25,14 @@ export const spotsApi = {
         return response.data;
     },
 
-    async getApprovedSpots(): Promise<SpotResponse[]> {
-        const response = await apiClient.get<SpotResponse[]>("/api/v1/spots");
+    async getApprovedSpots(filters: SpotSearchFilters = {}): Promise<SpotResponse[]> {
+        const params = new URLSearchParams();
+        const query = filters.query?.trim();
+        if (query) params.set("query", query);
+        filters.types?.forEach((type) => params.append("type", type));
+        filters.features?.forEach((feature) => params.append("feature", feature));
+
+        const response = await apiClient.get<SpotResponse[]>("/api/v1/spots", { params });
 
         return response.data;
     },
