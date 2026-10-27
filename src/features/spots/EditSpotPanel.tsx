@@ -6,9 +6,16 @@ import { SpotDialog } from "./SpotDialog";
 import { getApiError, getApiStatus } from "../../shared/api/apiError";
 import { validateSpot } from "./spotValidation";
 
-interface Props { spot: SpotResponse; onSaved: (spot: SpotResponse) => void; onClose: () => void; onConflict: () => void }
+interface Props {
+    spot: SpotResponse;
+    onSaved: (spot: SpotResponse) => void;
+    onClose: () => void;
+    onConflict: () => void;
+    saveSpot?: (spotId: string, request: Parameters<typeof spotsApi.updateSpot>[1]) => Promise<SpotResponse>;
+    allowApproved?: boolean;
+}
 
-export function EditSpotPanel({ spot, onSaved, onClose, onConflict }: Props) {
+export function EditSpotPanel({ spot, onSaved, onClose, onConflict, saveSpot = spotsApi.updateSpot, allowApproved = false }: Props) {
     const [name, setName] = useState(spot.name);
     const [description, setDescription] = useState(spot.description ?? "");
     const [type, setType] = useState<SpotType>(spot.type);
@@ -16,7 +23,7 @@ export function EditSpotPanel({ spot, onSaved, onClose, onConflict }: Props) {
     const [location, setLocation] = useState<[number, number]>([spot.latitude, spot.longitude]);
     const [metadata, setMetadata] = useState<SpotMetadataResponse | null>(null);
     const [saving, setSaving] = useState(false);
-    const [blocked, setBlocked] = useState(spot.approved);
+    const [blocked, setBlocked] = useState(spot.approved && !allowApproved);
     const [error, setError] = useState("");
     const [retry, setRetry] = useState(0);
     const inFlight = useRef(false);
@@ -38,14 +45,15 @@ export function EditSpotPanel({ spot, onSaved, onClose, onConflict }: Props) {
         inFlight.current = true;
         setSaving(true); setError("");
         try {
-            const updated = await spotsApi.updateSpot(spot.id, request);
+            const updated = await saveSpot(spot.id, request);
             onSaved(updated);
         } catch (error) {
-            if ([403, 404, 409].includes(getApiStatus(error) ?? 0)) {
+            const status = getApiStatus(error);
+            if ([403, 404, 409].includes(status ?? 0)) {
                 setBlocked(true);
                 onConflict();
             }
-            setError(getApiStatus(error) === 409
+            setError(status === 409 && !allowApproved
                 ? "This spot has already been approved and can no longer be edited. Your changes have not been saved."
                 : getApiError(error, "Failed to save spot."));
         } finally {

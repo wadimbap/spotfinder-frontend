@@ -1,5 +1,5 @@
 import { apiClient } from "../../shared/api/apiClient";
-import type { CreateSpotRequest, SpotResponse } from "../spots/spotsTypes";
+import type { CreateSpotRequest, SpotResponse, UpdateSpotRequest } from "../spots/spotsTypes";
 
 export const adminSpotsApi = {
     async deleteSpot(spotId: string): Promise<void> {
@@ -19,6 +19,23 @@ export const adminSpotsApi = {
     async getPendingSpots(): Promise<SpotResponse[]> {
         const response = await apiClient.get<SpotResponse[]>(
             "/api/v1/admin/spots/pending",
+        );
+
+        return response.data;
+    },
+
+    async getApprovedSpots(): Promise<SpotResponse[]> {
+        const response = await apiClient.get<SpotResponse[]>(
+            "/api/v1/admin/spots/approved",
+        );
+
+        return response.data;
+    },
+
+    async updateSpot(spotId: string, request: UpdateSpotRequest): Promise<SpotResponse> {
+        const response = await apiClient.put<SpotResponse>(
+            `/api/v1/admin/spots/${spotId}`,
+            request,
         );
 
         return response.data;

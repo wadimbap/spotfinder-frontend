@@ -39,3 +39,14 @@ it("retains the draft and blocks resubmission after concurrent approval", async 
     expect((screen.getByText("Save changes") as HTMLButtonElement).disabled).toBe(true);
     expect(onConflict).toHaveBeenCalledOnce();
 });
+
+it("uses an administrative save handler for an approved spot", async () => {
+    const saveSpot = vi.fn().mockResolvedValue(spot);
+    const onSaved = vi.fn();
+    render(<EditSpotPanel spot={spot} allowApproved saveSpot={saveSpot} onSaved={onSaved} onClose={vi.fn()} onConflict={vi.fn()} />);
+    await screen.findByText("RAIL");
+    fireEvent.click(screen.getByText("Save changes"));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(spot));
+    expect(saveSpot).toHaveBeenCalledWith(spot.id, expect.objectContaining({ features: ["FLAT"] }));
+    expect(spotsApi.updateSpot).not.toHaveBeenCalled();
+});

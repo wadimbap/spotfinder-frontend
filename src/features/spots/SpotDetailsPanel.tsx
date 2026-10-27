@@ -17,13 +17,14 @@ interface SpotDetailsPanelProps {
     source?: "public" | "own" | "admin";
     onModerated?: (spotId: string) => void;
     onDeleted?: (spotId: string) => void;
+    onEdit?: (spot: SpotResponse) => void;
 }
 
 function formatLabel(value: string) {
     return value.toLowerCase().split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
 }
 
-export function SpotDetailsPanel({ spot: initialSpot, onClose, source = "public", onModerated, onDeleted }: SpotDetailsPanelProps) {
+export function SpotDetailsPanel({ spot: initialSpot, onClose, source = "public", onModerated, onDeleted, onEdit }: SpotDetailsPanelProps) {
     const [spot, setSpot] = useState(initialSpot);
     const [loading, setLoading] = useState(initialSpot.approved || source !== "public");
     const [error, setError] = useState("");
@@ -83,6 +84,8 @@ export function SpotDetailsPanel({ spot: initialSpot, onClose, source = "public"
                 <button className="secondary-button" onClick={() => setRetry((value) => value + 1)}>Retry account</button></div>}
             </SpotPhotos>
             <SpotComments key={`comments-${spot.id}`} spotId={spot.id} currentUser={currentUser} />
+            {source === "admin" && onEdit && (currentUser?.role === "MODERATOR" || currentUser?.role === "ADMIN")
+                && <div className="spot-details-section"><button className="secondary-button" onClick={() => onEdit(spot)}>Edit spot</button></div>}
             {source === "admin" && !spot.approved && (currentUser?.role === "MODERATOR" || currentUser?.role === "ADMIN")
                 && <ModerationActions spotId={spot.id} onDone={onModerated ?? (() => onClose())} />}
             <DeleteSpotAction spotId={spot.id} currentUser={currentUser} onDeleted={onDeleted ?? (() => onClose())} />

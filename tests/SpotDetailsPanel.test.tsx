@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { SpotDetailsPanel } from "../src/features/spots/SpotDetailsPanel";
 import { spotsApi } from "../src/features/spots/spotsApi";
 import { authApi } from "../src/features/auth/authApi";
@@ -39,6 +39,16 @@ describe("spot details", () => {
         vi.mocked(adminSpotsApi.getSpot).mockResolvedValue({ ...spot, approved: false, name: "Pending review" });
         render(<SpotDetailsPanel source="admin" spot={{ ...spot, approved: false }} onClose={vi.fn()} />);
         expect((await screen.findByTestId("spot-location-map")).textContent).toBe(`Pending review: ${spot.latitude}, ${spot.longitude}`);
+    });
+    it("lets a moderator open the existing editor for an approved spot", async () => {
+        const onEdit = vi.fn();
+        vi.mocked(authApi.getCurrentUser).mockResolvedValue({ ...user, role: "MODERATOR" });
+        vi.mocked(adminSpotsApi.getSpot).mockResolvedValue(spot);
+
+        render(<SpotDetailsPanel source="admin" spot={spot} onClose={vi.fn()} onEdit={onEdit} />);
+
+        fireEvent.click(await screen.findByRole("button", { name: "Edit spot" }));
+        expect(onEdit).toHaveBeenCalledWith(spot);
     });
     it("refreshes approved details before requesting photos", async () => {
         render(<SpotDetailsPanel spot={spot} onClose={vi.fn()} />);

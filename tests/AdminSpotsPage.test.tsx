@@ -7,7 +7,7 @@ import { authApi } from "../src/features/auth/authApi";
 import { spot, user } from "./fixtures";
 
 vi.mock("../src/features/admin/adminSpotsApi", () => ({ adminSpotsApi: {
-    getPendingSpots: vi.fn(), approveSpot: vi.fn(), rejectSpot: vi.fn(),
+    getPendingSpots: vi.fn(), getApprovedSpots: vi.fn(), approveSpot: vi.fn(), rejectSpot: vi.fn(), updateSpot: vi.fn(),
 } }));
 vi.mock("../src/features/auth/authApi", () => ({ authApi: { getCurrentUser: vi.fn() } }));
 vi.mock("../src/features/spots/SpotDetailsPanel", () => ({ SpotDetailsPanel: ({ source }: { source: string }) => <p>Details source: {source}</p> }));
@@ -16,6 +16,7 @@ beforeEach(() => {
     vi.resetAllMocks();
     vi.mocked(authApi.getCurrentUser).mockResolvedValue({ ...user, role: "MODERATOR" });
     vi.mocked(adminSpotsApi.getPendingSpots).mockResolvedValue([{ ...spot, approved: false }]);
+    vi.mocked(adminSpotsApi.getApprovedSpots).mockResolvedValue([spot]);
 });
 
 it("blocks direct route access for regular users", async () => {
@@ -30,6 +31,18 @@ it("opens a full card through the administrative source", async () => {
     render(<MemoryRouter><AdminSpotsPage /></MemoryRouter>);
     fireEvent.click(await screen.findByText("Review details"));
     expect(screen.getByText("Details source: admin")).toBeTruthy();
+});
+
+it("loads approved spots from the administrative endpoint", async () => {
+    vi.mocked(adminSpotsApi.getApprovedSpots).mockResolvedValueOnce([
+        { ...spot, name: "Approved spot" },
+    ]);
+
+    render(<MemoryRouter><AdminSpotsPage /></MemoryRouter>);
+    await screen.findByRole("tab", { name: "Pending" });
+    fireEvent.click(screen.getByRole("tab", { name: "Approved" }));
+    expect(await screen.findByText("Approved spot")).toBeTruthy();
+    expect(adminSpotsApi.getApprovedSpots).toHaveBeenCalledOnce();
 });
 
 it("confirms rejection and removes the item only after success", async () => {
