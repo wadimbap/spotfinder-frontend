@@ -81,15 +81,22 @@ Create `.env.local` for local development:
 
 ```env
 VITE_API_BASE_URL=http://localhost:8080
+VITE_CARTO_API_KEY=your-domain-restricted-carto-key
 ```
 
 For stage build:
 
 ```env
 VITE_API_BASE_URL=https://stage-api.deployflow.ru
+VITE_CARTO_API_KEY=your-domain-restricted-carto-key
 ```
 
 Vite exposes only variables with the `VITE_` prefix to the browser.
+`VITE_CARTO_API_KEY` is optional: without it maps retain the OpenStreetMap fallback. With a
+domain-restricted CARTO key, light mode uses Positron and dark mode uses Dark Matter. The key is
+available to the browser, so restrict it to the deployed frontend domains and keep the required
+OpenStreetMap/CARTO attribution visible.
+For the stage pipeline, store that value in the repository secret `CARTO_API_KEY`.
 
 Auth uses a 15-minute Bearer access token and an HttpOnly refresh cookie. The app
 restores sessions when opened and refreshes failed protected requests once. Login,
@@ -172,7 +179,7 @@ replace integration testing with a running PostgreSQL/MinIO backend.
 Build stage image manually:
 
 ```bash
-docker build --build-arg VITE_API_BASE_URL=https://stage-api.deployflow.ru -t spotfinder-frontend:stage .
+docker build --build-arg VITE_API_BASE_URL=https://stage-api.deployflow.ru --build-arg VITE_CARTO_API_KEY=your-domain-restricted-carto-key -t spotfinder-frontend:stage .
 ```
 
 Run locally:

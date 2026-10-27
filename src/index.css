@@ -1231,6 +1231,7 @@ h1, h2, h3, p { overflow-wrap: anywhere; }
 /* Only raster tiles are filtered; markers, controls and photos retain their colors. */
 .leaflet-container { background: var(--surface-muted); }
 .leaflet-tile-pane { filter: var(--map-filter); }
+.leaflet-container.carto-basemap .leaflet-tile-pane { filter: none; }
 .leaflet-bar { border: 1px solid var(--border) !important; box-shadow: var(--shadow); overflow: hidden; }
 .leaflet-bar a, .leaflet-bar a:hover { color: var(--text); background: var(--surface); border-bottom-color: var(--border); }
 .leaflet-bar a:hover { background: var(--surface-hover); }
@@ -1284,6 +1285,8 @@ h1, h2, h3, p { overflow-wrap: anywhere; }
 .spot-location-map-section { margin: 12px 0; }
 .spot-location-map-section h2 { margin: 0 0 8px; font-size: 14px; }
 .spot-location-map { height: 180px; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; }
+.spot-location-map-attribution { margin: 4px 0 0; color: var(--muted); font-size: 10px; line-height: 1; text-align: right; }
+.spot-location-map-attribution a { color: inherit; }
 .spot-detail-features { margin-top: 0; gap: 7px; }
 .spot-detail-features .feature-chip-static { border-radius: 7px; background: var(--surface-muted); color: var(--text-secondary); }
 .spot-detail-features .spot-edit-chip { border: 1px solid color-mix(in srgb, var(--accent-text) 45%, transparent); background: color-mix(in srgb, var(--accent-soft) 62%, transparent); color: var(--accent-text); cursor: pointer; opacity: 0.8; }

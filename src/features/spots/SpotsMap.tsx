@@ -10,13 +10,14 @@ import {
 import {
     MapContainer,
     Marker,
-    TileLayer,
     useMap,
     useMapEvents,
     ZoomControl,
 } from "react-leaflet";
 
 import "../../shared/map/leafletIcon";
+import { MapTileLayer } from "../../shared/map/MapTileLayer";
+import { hasCartoBasemap } from "../../shared/map/mapTiles";
 import type { SpotResponse } from "./spotsTypes";
 
 interface SpotsMapProps {
@@ -244,20 +245,14 @@ export function SpotsMap({
         <MapContainer
             center={mapCenter}
             zoom={11}
-            className="spots-full-map"
+            className={`spots-full-map${hasCartoBasemap() ? " carto-basemap" : ""}`}
             zoomControl={false}
             preferCanvas
             fadeAnimation={false}
             markerZoomAnimation={false}
             zoomAnimation={false}
         >
-            <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                updateWhenIdle
-                updateWhenZooming={false}
-                keepBuffer={1}
-            />
+            <MapTileLayer updateWhenIdle updateWhenZooming={false} keepBuffer={1} />
 
             <ZoomControl position="bottomright" />
             <RemoveLeafletPrefix />

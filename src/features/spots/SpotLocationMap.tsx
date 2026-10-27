@@ -1,6 +1,9 @@
-import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import { MapContainer, Marker } from "react-leaflet";
 
 import { getSpotMarkerIcon } from "../../shared/map/spotMarkerIcon";
+import { MapTileLayer } from "../../shared/map/MapTileLayer";
+import { getMapTileConfig, hasCartoBasemap } from "../../shared/map/mapTiles";
+import { useTheme } from "../../shared/theme/theme";
 
 interface SpotLocationMapProps {
     latitude: number;
@@ -10,6 +13,8 @@ interface SpotLocationMapProps {
 
 export function SpotLocationMap({ latitude, longitude, spotName }: SpotLocationMapProps) {
     const center: [number, number] = [latitude, longitude];
+    const { resolvedTheme } = useTheme();
+    const { usesCarto } = getMapTileConfig(resolvedTheme);
 
     return (
         <section className="spot-location-map-section" aria-labelledby="spot-location-map-heading">
@@ -17,7 +22,8 @@ export function SpotLocationMap({ latitude, longitude, spotName }: SpotLocationM
             <MapContainer
                 aria-label={`Location of ${spotName}`}
                 center={center}
-                className="spot-location-map"
+                className={`spot-location-map${hasCartoBasemap() ? " carto-basemap" : ""}`}
+                attributionControl={false}
                 dragging={false}
                 doubleClickZoom={false}
                 keyboard={false}
@@ -26,12 +32,11 @@ export function SpotLocationMap({ latitude, longitude, spotName }: SpotLocationM
                 zoom={16}
                 zoomControl={false}
             >
-                <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
+                <MapTileLayer />
                 <Marker icon={getSpotMarkerIcon(false)} position={center} />
             </MapContainer>
+            <p className="spot-location-map-attribution"><a href="https://www.openstreetmap.org/copyright">© OSM</a>
+                {usesCarto && <> · <a href="https://carto.com/attribution/">CARTO</a></>}</p>
         </section>
     );
 }
