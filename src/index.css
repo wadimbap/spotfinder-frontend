@@ -435,6 +435,8 @@ a:hover {
   font-size: 12px;
 }
 
+.admin-spot-edit-button { padding: 4px 2px; border: 0; border-bottom: 1px solid currentcolor; background: transparent; color: var(--accent-text); font-size: 12px; font-weight: 700; cursor: pointer; }
+
 /* Full spots map page */
 
 .spots-map-page {

@@ -64,7 +64,9 @@ export function AdminSpotsPage() {
                 <div className="admin-spot-card-header"><h2>{spot.name}</h2><strong className={spot.approved ? "approved-badge" : "pending-badge"}>{spot.approved ? "Approved" : "Pending"}</strong></div>
                 <p className="admin-spot-description">{spot.description}</p>
                 <p className="field-help">{spot.latitude}, {spot.longitude}</p>
-                <div className="spot-features">{spot.features.map((feature) => <span key={feature}>{feature.replaceAll("_", " ")}</span>)}</div>
+                <div className="spot-features">{spot.features.map((feature) => <span key={feature}>{feature.replaceAll("_", " ")}</span>)}
+                    <button type="button" className="admin-spot-edit-button" onClick={() => setEditing(spot)}>Edit spot</button>
+                </div>
                 <div className="action-row"><button className="secondary-button" onClick={() => setSelected(spot)}>Review details</button></div>
                 {!spot.approved && <ModerationActions spotId={spot.id} onDone={completed} />}
             </article>)}

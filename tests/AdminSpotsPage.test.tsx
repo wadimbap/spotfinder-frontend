@@ -11,6 +11,7 @@ vi.mock("../src/features/admin/adminSpotsApi", () => ({ adminSpotsApi: {
 } }));
 vi.mock("../src/features/auth/authApi", () => ({ authApi: { getCurrentUser: vi.fn() } }));
 vi.mock("../src/features/spots/SpotDetailsPanel", () => ({ SpotDetailsPanel: ({ source }: { source: string }) => <p>Details source: {source}</p> }));
+vi.mock("../src/features/spots/EditSpotPanel", () => ({ EditSpotPanel: ({ spot }: { spot: { name: string } }) => <p>Editing: {spot.name}</p> }));
 
 beforeEach(() => {
     vi.resetAllMocks();
@@ -31,6 +32,12 @@ it("opens a full card through the administrative source", async () => {
     render(<MemoryRouter><AdminSpotsPage /></MemoryRouter>);
     fireEvent.click(await screen.findByText("Review details"));
     expect(screen.getByText("Details source: admin")).toBeTruthy();
+});
+
+it("opens the editor directly from a spot card", async () => {
+    render(<MemoryRouter><AdminSpotsPage /></MemoryRouter>);
+    fireEvent.click(await screen.findByRole("button", { name: "Edit spot" }));
+    expect(screen.getByText(`Editing: ${spot.name}`)).toBeTruthy();
 });
 
 it("loads approved spots from the administrative endpoint", async () => {
