@@ -8,7 +8,7 @@ import { adminSpotsApi } from "../src/features/admin/adminSpotsApi";
 import { commentsApi } from "../src/features/comments/commentsApi";
 
 vi.mock("../src/features/spots/spotsApi", () => ({ spotsApi: {
-    getApprovedSpot: vi.fn(), getMySpots: vi.fn(), getSpotPhotos: vi.fn(), getSpotPhotoContent: vi.fn(),
+    getApprovedSpot: vi.fn(), getMySpots: vi.fn(), getSpotPhotos: vi.fn(), getSpotPhotoContent: vi.fn(), uploadSpotPhoto: vi.fn(),
 } }));
 vi.mock("../src/features/auth/authApi", () => ({ authApi: { getCurrentUser: vi.fn() } }));
 vi.mock("../src/features/admin/adminSpotsApi", () => ({ adminSpotsApi: { getSpot: vi.fn() } }));
@@ -28,6 +28,25 @@ beforeEach(() => {
 });
 
 describe("spot details", () => {
+    it("updates the card and its parent after uploading without losing failed files", async () => {
+        const onSpotUpdated = vi.fn();
+        const photo = { id: "photo", spotId: spot.id, originalFilename: "good.png", contentType: "image/png",
+            sizeBytes: 4, createdByUserId: user.id, createdAt: spot.createdAt };
+        vi.mocked(spotsApi.getApprovedSpot).mockResolvedValue(spot);
+        vi.mocked(spotsApi.uploadSpotPhoto).mockResolvedValueOnce(photo).mockRejectedValueOnce(new Error("offline"));
+        render(<SpotDetailsPanel spot={spot} onClose={vi.fn()} onSpotUpdated={onSpotUpdated} />);
+        await screen.findByText("No photos yet.");
+        await screen.findByRole("button", { name: "Add photos", exact: true });
+        fireEvent.change(screen.getByLabelText(/Add photos/), { target: { files: [
+            new File(["good"], "good.png", { type: "image/png" }), new File(["bad"], "bad.png", { type: "image/png" }),
+        ] } });
+        fireEvent.click(screen.getByText("Upload photos"));
+        expect(await screen.findByText("Pending")).toBeTruthy();
+        expect(screen.getByText(/1 uploaded, 1 failed/)).toBeTruthy();
+        expect(screen.getByText("bad.png")).toBeTruthy();
+        expect(onSpotUpdated).toHaveBeenCalledWith({ ...spot, approved: false });
+    });
+
     it("refreshes pending moderation details via the admin endpoint", async () => {
         vi.mocked(adminSpotsApi.getSpot).mockResolvedValue({ ...spot, approved: false, name: "Pending review" });
         render(<SpotDetailsPanel source="admin" spot={{ ...spot, approved: false }} onClose={vi.fn()} />);

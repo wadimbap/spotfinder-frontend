@@ -40,7 +40,7 @@ it("retains the draft and blocks resubmission after a save conflict", async () =
     expect(onConflict).toHaveBeenCalledOnce();
 });
 
-it("allows the owner to save an approved spot without changing its status", async () => {
+it("keeps the server response when an approved spot is saved unchanged", async () => {
     const onSaved = vi.fn();
     vi.mocked(spotsApi.updateSpot).mockResolvedValue(spot);
     render(<EditSpotPanel spot={spot} onSaved={onSaved} onClose={vi.fn()} onConflict={vi.fn()} />);
@@ -48,4 +48,22 @@ it("allows the owner to save an approved spot without changing its status", asyn
     fireEvent.click(screen.getByText("Save changes"));
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(spot));
     expect(spotsApi.updateSpot).toHaveBeenCalledWith(spot.id, expect.objectContaining({ features: ["FLAT"] }));
+});
+
+it("warns an owner before changing a published spot and propagates pending status", async () => {
+    const onSaved = vi.fn();
+    const pending = { ...spot, name: "Changed spot", approved: false };
+    vi.mocked(spotsApi.updateSpot).mockResolvedValue(pending);
+    render(<EditSpotPanel spot={spot} onSaved={onSaved} onClose={vi.fn()} onConflict={vi.fn()} />);
+    expect(screen.getByRole("note").textContent).toContain("hide it from the shared map");
+    await screen.findByText("RAIL");
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: pending.name } });
+    fireEvent.click(screen.getByText("Save changes"));
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(pending));
+});
+
+it("does not warn of losing approval for an administrative edit", async () => {
+    render(<EditSpotPanel spot={spot} requiresModeration={false} onSaved={vi.fn()} onClose={vi.fn()} onConflict={vi.fn()} />);
+    await screen.findByText("RAIL");
+    expect(screen.queryByRole("note")).toBeNull();
 });

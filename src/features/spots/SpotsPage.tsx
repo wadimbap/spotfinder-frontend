@@ -45,6 +45,7 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
     const [mapReady, setMapReady] = useState(false);
     const [spotsError, setSpotsError] = useState("");
     const [metadataError, setMetadataError] = useState("");
+    const [notice, setNotice] = useState("");
 
     useEffect(() => {
         const timer = window.setTimeout(() => setDebouncedQuery(filters.query?.trim() ?? ""), 300);
@@ -98,6 +99,7 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
     }, [reload]);
 
     function handleOpenCreatePanel(approved = false) {
+        setNotice("");
         setCreatingApproved(approved);
         setCreationPersisted(false);
         setSelectedSpot(null);
@@ -121,6 +123,7 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
 
     function handleSpotClick(spot: SpotResponse) {
         if (panelMode === "create") return;
+        setNotice("");
         setFiltersOpen(false);
         setSelectedSpot(spot);
         setPanelMode("details");
@@ -132,6 +135,14 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
         setSelectedSpot(createdSpot);
         setPanelMode("details");
         setDraftLocation(null);
+    }
+
+    function handleSpotUpdated(updated: SpotResponse) {
+        setSpots((current) => updated.approved
+            ? current.map((spot) => spot.id === updated.id ? updated : spot)
+            : current.filter((spot) => spot.id !== updated.id));
+        setReload((value) => value + 1);
+        if (!updated.approved) setNotice("Spot sent for moderation and hidden from the shared map. You can find it in My spots.");
     }
 
     const errorMessage = [spotsError, metadataError].filter(Boolean).join(" ");
@@ -169,6 +180,7 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
 
             {errorMessage && <div className="spots-map-error" role="alert">{errorMessage}
                 <button className="secondary-button" disabled={panelMode === "create"} onClick={() => setReload((value) => value + 1)}>Retry map data</button></div>}
+            {notice && !errorMessage && <p className="spots-map-notice" role="status">{notice}</p>}
 
             {panelMode === "create" && creatingApproved && !canModerate && <p className="spots-map-error" role="alert">
                 {accountLoading ? "Checking permissions..." : "Creating an approved spot requires MODERATOR or ADMIN permissions."}
@@ -190,7 +202,7 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
                 onClose={() => setFiltersOpen(false)} />}
 
             {panelMode === "details" && selectedSpot && (
-                <SpotDetailsPanel key={selectedSpot.id} spot={selectedSpot} onClose={handleClosePanel} onDeleted={(id) => {
+                <SpotDetailsPanel key={selectedSpot.id} spot={selectedSpot} onClose={handleClosePanel} onSpotUpdated={handleSpotUpdated} onDeleted={(id) => {
                     setSpots((current) => current.filter((spot) => spot.id !== id));
                     setSelectedSpot((current) => current?.id === id ? null : current);
                 }} onEdit={(spot, editor) => {
@@ -201,9 +213,10 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
                 }} />
             )}
             {editingSpot && <EditSpotPanel key={editingSpot.id} spot={editingSpot}
+                requiresModeration={!editingAsModerator}
                 saveSpot={editingAsModerator ? adminSpotsApi.updateSpot : spotsApi.updateSpot}
                 onClose={() => setEditingSpot(null)} onConflict={() => setReload((value) => value + 1)} onSaved={(updated) => {
-                    setSpots((current) => current.map((spot) => spot.id === updated.id ? updated : spot));
+                    handleSpotUpdated(updated);
                     setEditingSpot(null);
                 }} />}
         </div>

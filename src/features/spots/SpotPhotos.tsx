@@ -10,9 +10,9 @@ import { PhotoPlaceholder } from "./PhotoPlaceholder";
 import { PhotoViewer } from "./PhotoViewer";
 
 interface Preview { photo: SpotPhotoResponse; url: string }
-interface Props { spot: SpotResponse; currentUser: CurrentUserResponse | null; showCover?: boolean; children?: ReactNode }
+interface Props { spot: SpotResponse; currentUser: CurrentUserResponse | null; showCover?: boolean; children?: ReactNode; onUploaded?: () => void }
 
-export function SpotPhotos({ spot, currentUser, showCover = false, children }: Props) {
+export function SpotPhotos({ spot, currentUser, showCover = false, children, onUploaded }: Props) {
     const [previews, setPreviews] = useState<Preview[]>([]);
     const [photoIds, setPhotoIds] = useState<string[]>([]);
     const [failedCoverId, setFailedCoverId] = useState<string | null>(null);
@@ -91,8 +91,11 @@ export function SpotPhotos({ spot, currentUser, showCover = false, children }: P
             setFiles(failed);
             if (input.current) input.current.value = "";
             if (failed.length) setUploadError(`${uploaded} uploaded, ${failed.length} failed. ${message} Failed files are kept for retry.`);
-            else setUploadNotice(`${uploaded} photo${uploaded === 1 ? "" : "s"} uploaded.`);
-            if (uploaded) setReload((value) => value + 1);
+            else setUploadNotice(`${uploaded} photo${uploaded === 1 ? "" : "s"} uploaded.${currentUser?.role === "USER" ? " The spot is pending moderation." : ""}`);
+            if (uploaded) {
+                setReload((value) => value + 1);
+                onUploaded?.();
+            }
             setBusy(false);
         }
         inFlight.current = false;
@@ -158,6 +161,9 @@ export function SpotPhotos({ spot, currentUser, showCover = false, children }: P
                 <button type="button" className="secondary-button" disabled={busy} onClick={() => { setDeleteTarget(null); setDeleteError(""); }}>Cancel</button></div>
         </div>}
         {canUpload && files.length > 0 && <div className="spot-photo-upload">
+            {spot.approved && currentUser?.role === "USER" && <p className="field-help" role="note">
+                Uploading photos will send this entire spot back for moderation and hide it from the shared map until approved again.
+            </p>}
             <ul className="field-help">{files.map((file, index) => <li key={`${file.name}-${index}`}>{file.name}</li>)}</ul>
             <p className="field-help">JPEG, PNG, WebP · up to 5 files · 5 MiB each</p>
             <div className="action-row"><button className="primary-button" disabled={busy || loading || files.some((file) => !!validatePhoto(file))} onClick={() => void upload()}>{busy ? "Processing..." : "Upload photos"}</button>

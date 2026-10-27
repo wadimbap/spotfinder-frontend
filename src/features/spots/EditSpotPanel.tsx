@@ -11,10 +11,11 @@ interface Props {
     onSaved: (spot: SpotResponse) => void;
     onClose: () => void;
     onConflict: () => void;
+    requiresModeration?: boolean;
     saveSpot?: (spotId: string, request: Parameters<typeof spotsApi.updateSpot>[1]) => Promise<SpotResponse>;
 }
 
-export function EditSpotPanel({ spot, onSaved, onClose, onConflict, saveSpot = spotsApi.updateSpot }: Props) {
+export function EditSpotPanel({ spot, onSaved, onClose, onConflict, requiresModeration = true, saveSpot = spotsApi.updateSpot }: Props) {
     const [name, setName] = useState(spot.name);
     const [description, setDescription] = useState(spot.description ?? "");
     const [type, setType] = useState<SpotType>(spot.type);
@@ -63,6 +64,9 @@ export function EditSpotPanel({ spot, onSaved, onClose, onConflict, saveSpot = s
         <div className="spots-panel-header"><h1>Edit spot</h1>
             <button type="button" aria-label="Close editor" className="panel-close-button" disabled={saving} onClick={close}>×</button></div>
         <form onSubmit={(event) => void save(event)}>
+            {spot.approved && requiresModeration && <p className="field-help" role="note">
+                Changing this spot will send it back for moderation and hide it from the shared map until approved again.
+            </p>}
             <fieldset disabled={saving || blocked} className="form-fields">
                 <div className="form-field"><label htmlFor="edit-name">Name</label>
                     <input id="edit-name" value={name} minLength={2} maxLength={255} required onChange={(event) => setName(event.target.value)} /></div>

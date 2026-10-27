@@ -15,6 +15,7 @@ export function MySpotsPage() {
     const [reload, setReload] = useState(0);
     const [selected, setSelected] = useState<SpotResponse | null>(null);
     const [editing, setEditing] = useState<SpotResponse | null>(null);
+    const [editingRequiresModeration, setEditingRequiresModeration] = useState(true);
 
     useEffect(() => {
         let active = true;
@@ -56,12 +57,17 @@ export function MySpotsPage() {
                 </article>
             ))}</div>}
             {selected && <SpotDialog onClose={() => setSelected(null)}>
-                <SpotDetailsPanel key={selected.id} source="own" spot={selected} onClose={() => setSelected(null)} onDeleted={(id) => {
+                <SpotDetailsPanel key={selected.id} source="own" spot={selected} onClose={() => setSelected(null)}
+                    onSpotUpdated={(updated) => setSpots((current) => current.map((item) => item.id === updated.id ? updated : item))} onDeleted={(id) => {
                     setSpots((current) => current.filter((item) => item.id !== id));
                     setSelected((current) => current?.id === id ? null : current);
-                }} onEdit={(spot) => { setSelected(null); setEditing(spot); }} />
+                }} onEdit={(spot, editor) => {
+                    setEditingRequiresModeration(editor.role === "USER");
+                    setSelected(null); setEditing(spot);
+                }} />
             </SpotDialog>}
             {editing && <EditSpotPanel key={editing.id} spot={editing} onClose={() => setEditing(null)}
+                requiresModeration={editingRequiresModeration}
                 onConflict={() => setReload((value) => value + 1)} onSaved={(updated) => {
                     setSpots((current) => current.map((item) => item.id === updated.id ? updated : item));
                     setEditing(null);

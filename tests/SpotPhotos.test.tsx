@@ -65,7 +65,7 @@ it("retries only failed files after a partial upload", async () => {
     expect(await screen.findByText(/1 uploaded, 1 failed/)).toBeTruthy();
     await waitFor(() => expect((screen.getByText("Upload photos") as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(screen.getByText("Upload photos"));
-    await screen.findByText("1 photo uploaded.");
+    await screen.findByText(/1 photo uploaded\./);
     expect(vi.mocked(spotsApi.uploadSpotPhoto).mock.calls.map((call) => call[1].name)).toEqual(["good.png", "bad.png", "bad.png"]);
 });
 
@@ -156,4 +156,37 @@ it("shows only an add tile initially and reveals upload/cancel after selection",
     expect(screen.queryByText("selected.png")).toBeNull();
     expect(screen.queryByText("Upload photos")).toBeNull();
     expect(spotsApi.uploadSpotPhoto).not.toHaveBeenCalled();
+});
+
+it("warns before uploading and notifies the card after a partial success", async () => {
+    const onUploaded = vi.fn();
+    vi.mocked(spotsApi.uploadSpotPhoto).mockResolvedValueOnce(photo).mockRejectedValueOnce(new Error("offline"));
+    render(<SpotPhotos spot={spot} currentUser={user} onUploaded={onUploaded} />);
+    await screen.findByAltText("ride.png");
+    fireEvent.change(screen.getByLabelText(/Add photos/), { target: { files: [
+        new File(["good"], "good.png", { type: "image/png" }), new File(["bad"], "bad.png", { type: "image/png" }),
+    ] } });
+    expect(screen.getByRole("note").textContent).toContain("entire spot back for moderation");
+    fireEvent.click(screen.getByText("Upload photos"));
+    await screen.findByText(/1 uploaded, 1 failed/);
+    expect(onUploaded).toHaveBeenCalledOnce();
+    expect(screen.getByText("bad.png")).toBeTruthy();
+});
+
+it("does not report a changed spot when all uploads fail", async () => {
+    const onUploaded = vi.fn();
+    vi.mocked(spotsApi.uploadSpotPhoto).mockRejectedValue(new Error("offline"));
+    render(<SpotPhotos spot={spot} currentUser={user} onUploaded={onUploaded} />);
+    await screen.findByAltText("ride.png");
+    fireEvent.change(screen.getByLabelText(/Add photos/), { target: { files: [new File(["bad"], "bad.png", { type: "image/png" })] } });
+    fireEvent.click(screen.getByText("Upload photos"));
+    await screen.findByText(/0 uploaded, 1 failed/);
+    expect(onUploaded).not.toHaveBeenCalled();
+});
+
+it("does not warn privileged owners that their photos need approval", async () => {
+    render(<SpotPhotos spot={spot} currentUser={{ ...user, role: "MODERATOR" }} />);
+    await screen.findByAltText("ride.png");
+    fireEvent.change(screen.getByLabelText(/Add photos/), { target: { files: [new File(["photo"], "new.png", { type: "image/png" })] } });
+    expect(screen.queryByRole("note")).toBeNull();
 });

@@ -306,8 +306,13 @@ either layer cannot leave the page permanently locked.
 /admin/spots
 ```
 
-`/my-spots` includes all of the current user's spots. Only Pending spots can be edited.
-The editor lets the owner change details and pick a new location on a map.
+`/my-spots` includes all of the current user's spots. Owners can edit both Approved
+and Pending spots, including their location. Regular owners are warned that changes
+to an Approved spot or successful photo uploads return the entire spot to Pending
+and hide it from the shared map until approved again. Existing photos and comments
+are retained. Unchanged saves and failed uploads preserve approval. Moderator and
+administrator changes preserve the current approval state. Failed photo files stay
+available for retry even when another photo in the same batch sends the spot to moderation.
 
 MODERATOR and ADMIN users have a separate **Create approved spot** action. The ordinary
 **Add spot** flow always submits the spot for moderation. Only ADMIN can delete a spot;
