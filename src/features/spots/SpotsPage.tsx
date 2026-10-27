@@ -7,6 +7,8 @@ import { SpotDetailsPanel } from "./SpotDetailsPanel";
 import { SpotFiltersPanel } from "./SpotFiltersPanel";
 import { SpotsMap } from "./SpotsMap";
 import { spotsApi } from "./spotsApi";
+import { adminSpotsApi } from "../admin/adminSpotsApi";
+import { EditSpotPanel } from "./EditSpotPanel";
 import type { SpotMetadataResponse, SpotResponse, SpotSearchFilters } from "./spotsTypes";
 
 type PanelMode = "none" | "create" | "details";
@@ -34,6 +36,8 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
     );
 
     const [selectedSpot, setSelectedSpot] = useState<SpotResponse | null>(null);
+    const [editingSpot, setEditingSpot] = useState<SpotResponse | null>(null);
+    const [editingAsModerator, setEditingAsModerator] = useState(false);
     const [draftLocation, setDraftLocation] = useState<[number, number] | null>(
         null,
     );
@@ -189,8 +193,19 @@ export function SpotsPage({ defaultMode = "list" }: SpotsPageProps) {
                 <SpotDetailsPanel key={selectedSpot.id} spot={selectedSpot} onClose={handleClosePanel} onDeleted={(id) => {
                     setSpots((current) => current.filter((spot) => spot.id !== id));
                     setSelectedSpot((current) => current?.id === id ? null : current);
+                }} onEdit={(spot, editor) => {
+                    setSelectedSpot(null);
+                    setPanelMode("none");
+                    setEditingSpot(spot);
+                    setEditingAsModerator(editor.role === "MODERATOR" || editor.role === "ADMIN");
                 }} />
             )}
+            {editingSpot && <EditSpotPanel key={editingSpot.id} spot={editingSpot}
+                saveSpot={editingAsModerator ? adminSpotsApi.updateSpot : spotsApi.updateSpot}
+                onClose={() => setEditingSpot(null)} onConflict={() => setReload((value) => value + 1)} onSaved={(updated) => {
+                    setSpots((current) => current.map((spot) => spot.id === updated.id ? updated : spot));
+                    setEditingSpot(null);
+                }} />}
         </div>
     );
 }

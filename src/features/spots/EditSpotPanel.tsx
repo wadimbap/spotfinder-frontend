@@ -12,10 +12,9 @@ interface Props {
     onClose: () => void;
     onConflict: () => void;
     saveSpot?: (spotId: string, request: Parameters<typeof spotsApi.updateSpot>[1]) => Promise<SpotResponse>;
-    allowApproved?: boolean;
 }
 
-export function EditSpotPanel({ spot, onSaved, onClose, onConflict, saveSpot = spotsApi.updateSpot, allowApproved = false }: Props) {
+export function EditSpotPanel({ spot, onSaved, onClose, onConflict, saveSpot = spotsApi.updateSpot }: Props) {
     const [name, setName] = useState(spot.name);
     const [description, setDescription] = useState(spot.description ?? "");
     const [type, setType] = useState<SpotType>(spot.type);
@@ -23,7 +22,7 @@ export function EditSpotPanel({ spot, onSaved, onClose, onConflict, saveSpot = s
     const [location, setLocation] = useState<[number, number]>([spot.latitude, spot.longitude]);
     const [metadata, setMetadata] = useState<SpotMetadataResponse | null>(null);
     const [saving, setSaving] = useState(false);
-    const [blocked, setBlocked] = useState(spot.approved && !allowApproved);
+    const [blocked, setBlocked] = useState(false);
     const [error, setError] = useState("");
     const [retry, setRetry] = useState(0);
     const inFlight = useRef(false);
@@ -53,9 +52,7 @@ export function EditSpotPanel({ spot, onSaved, onClose, onConflict, saveSpot = s
                 setBlocked(true);
                 onConflict();
             }
-            setError(status === 409 && !allowApproved
-                ? "This spot has already been approved and can no longer be edited. Your changes have not been saved."
-                : getApiError(error, "Failed to save spot."));
+            setError(getApiError(error, "Failed to save spot."));
         } finally {
             inFlight.current = false; setSaving(false);
         }

@@ -51,8 +51,7 @@ export function MySpotsPage() {
                     <span className="spot-type-badge">{spot.type === "SKATEPARK" ? "Skatepark" : "Street"}</span>
                     <p className="spot-description">{spot.description}</p>
                     <p className="field-help spot-coordinates">{spot.latitude}, {spot.longitude}</p>
-                    <div className="action-row"><button className="secondary-button" onClick={() => setSelected(spot)}>View details</button>
-                        {!spot.approved && <button className="secondary-button" onClick={() => setEditing(spot)}>Edit spot</button>}</div>
+                    <div className="action-row"><button className="secondary-button" onClick={() => setSelected(spot)}>View details</button></div>
                     </div>
                 </article>
             ))}</div>}
@@ -60,7 +59,7 @@ export function MySpotsPage() {
                 <SpotDetailsPanel key={selected.id} source="own" spot={selected} onClose={() => setSelected(null)} onDeleted={(id) => {
                     setSpots((current) => current.filter((item) => item.id !== id));
                     setSelected((current) => current?.id === id ? null : current);
-                }} />
+                }} onEdit={(spot) => { setSelected(null); setEditing(spot); }} />
             </SpotDialog>}
             {editing && <EditSpotPanel key={editing.id} spot={editing} onClose={() => setEditing(null)}
                 onConflict={() => setReload((value) => value + 1)} onSaved={(updated) => {

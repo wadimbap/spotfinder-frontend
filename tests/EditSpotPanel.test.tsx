@@ -27,26 +27,25 @@ it("saves changed coordinates and fields without sending ownership or approval",
     });
 });
 
-it("retains the draft and blocks resubmission after concurrent approval", async () => {
+it("retains the draft and blocks resubmission after a save conflict", async () => {
     const onConflict = vi.fn();
     vi.mocked(spotsApi.updateSpot).mockRejectedValue({ isAxiosError: true, response: { status: 409 } });
     render(<EditSpotPanel spot={{ ...spot, approved: false }} onSaved={vi.fn()} onClose={vi.fn()} onConflict={onConflict} />);
     await screen.findByText("RAIL");
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Unsaved draft" } });
     fireEvent.click(screen.getByText("Save changes"));
-    expect(await screen.findByText(/already been approved/)).toBeTruthy();
+    expect(await screen.findByText("Failed to save spot.")).toBeTruthy();
     expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("Unsaved draft");
     expect((screen.getByText("Save changes") as HTMLButtonElement).disabled).toBe(true);
     expect(onConflict).toHaveBeenCalledOnce();
 });
 
-it("uses an administrative save handler for an approved spot", async () => {
-    const saveSpot = vi.fn().mockResolvedValue(spot);
+it("allows the owner to save an approved spot without changing its status", async () => {
     const onSaved = vi.fn();
-    render(<EditSpotPanel spot={spot} allowApproved saveSpot={saveSpot} onSaved={onSaved} onClose={vi.fn()} onConflict={vi.fn()} />);
+    vi.mocked(spotsApi.updateSpot).mockResolvedValue(spot);
+    render(<EditSpotPanel spot={spot} onSaved={onSaved} onClose={vi.fn()} onConflict={vi.fn()} />);
     await screen.findByText("RAIL");
     fireEvent.click(screen.getByText("Save changes"));
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(spot));
-    expect(saveSpot).toHaveBeenCalledWith(spot.id, expect.objectContaining({ features: ["FLAT"] }));
-    expect(spotsApi.updateSpot).not.toHaveBeenCalled();
+    expect(spotsApi.updateSpot).toHaveBeenCalledWith(spot.id, expect.objectContaining({ features: ["FLAT"] }));
 });

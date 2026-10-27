@@ -8,7 +8,7 @@ import { adminSpotsApi } from "../src/features/admin/adminSpotsApi";
 import { commentsApi } from "../src/features/comments/commentsApi";
 
 vi.mock("../src/features/spots/spotsApi", () => ({ spotsApi: {
-    getApprovedSpot: vi.fn(), getSpotPhotos: vi.fn(), getSpotPhotoContent: vi.fn(),
+    getApprovedSpot: vi.fn(), getMySpots: vi.fn(), getSpotPhotos: vi.fn(), getSpotPhotoContent: vi.fn(),
 } }));
 vi.mock("../src/features/auth/authApi", () => ({ authApi: { getCurrentUser: vi.fn() } }));
 vi.mock("../src/features/admin/adminSpotsApi", () => ({ adminSpotsApi: { getSpot: vi.fn() } }));
@@ -48,7 +48,23 @@ describe("spot details", () => {
         render(<SpotDetailsPanel source="admin" spot={spot} onClose={vi.fn()} onEdit={onEdit} />);
 
         fireEvent.click(await screen.findByRole("button", { name: "Edit spot" }));
-        expect(onEdit).toHaveBeenCalledWith(spot);
+        expect(onEdit).toHaveBeenCalledWith(spot, expect.objectContaining({ role: "MODERATOR" }));
+    });
+    it("shows the same card and editor action for an owner's approved spot", async () => {
+        const onEdit = vi.fn();
+        vi.mocked(spotsApi.getMySpots).mockResolvedValue([spot]);
+
+        render(<SpotDetailsPanel source="own" spot={spot} onClose={vi.fn()} onEdit={onEdit} />);
+
+        expect((await screen.findByTestId("spot-location-map")).textContent).toBe(`Original spot: ${spot.latitude}, ${spot.longitude}`);
+        fireEvent.click(screen.getByRole("button", { name: "Edit spot" }));
+        expect(onEdit).toHaveBeenCalledWith(spot, user);
+    });
+    it("does not offer editing to a regular user for somebody else's spot", async () => {
+        vi.mocked(spotsApi.getApprovedSpot).mockResolvedValue({ ...spot, name: "Fresh spot", createdByUserId: "other-user" });
+        render(<SpotDetailsPanel spot={spot} onClose={vi.fn()} onEdit={vi.fn()} />);
+        await screen.findByRole("heading", { name: "Fresh spot" });
+        expect(screen.queryByRole("button", { name: "Edit spot" })).toBeNull();
     });
     it("refreshes approved details before requesting photos", async () => {
         render(<SpotDetailsPanel spot={spot} onClose={vi.fn()} />);

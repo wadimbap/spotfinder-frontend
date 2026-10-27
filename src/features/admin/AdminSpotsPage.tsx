@@ -75,7 +75,7 @@ export function AdminSpotsPage() {
             <SpotDetailsPanel key={selected.id} source="admin" spot={selected} onClose={() => setSelected(null)} onModerated={completed} onDeleted={completed}
                 onEdit={(spot) => { setSelected(null); setEditing(spot); }} />
         </SpotDialog>}
-        {editing && <EditSpotPanel key={editing.id} spot={editing} allowApproved saveSpot={adminSpotsApi.updateSpot}
+        {editing && <EditSpotPanel key={editing.id} spot={editing} saveSpot={adminSpotsApi.updateSpot}
             onClose={() => setEditing(null)} onConflict={() => setReload((value) => value + 1)} onSaved={(updated) => {
                 setSpots((current) => current.map((spot) => spot.id === updated.id ? updated : spot));
                 setEditing(null);

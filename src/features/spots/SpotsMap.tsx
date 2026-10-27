@@ -116,11 +116,11 @@ function UserLocationControl({
     const map = useMap();
 
     useEffect(() => {
-        const control = new L.Control({ position: "topright" });
+        const control = new L.Control({ position: "bottomright" });
         control.onAdd = () => {
             const container = L.DomUtil.create(
                 "div",
-                "leaflet-control user-location-control",
+                "leaflet-control leaflet-bar user-location-control",
             );
             const button = L.DomUtil.create(
                 "button",
@@ -259,7 +259,7 @@ export function SpotsMap({
                 keepBuffer={1}
             />
 
-            <ZoomControl position="topright" />
+            <ZoomControl position="bottomright" />
             <RemoveLeafletPrefix />
             <MapCenterUpdater center={mapCenter} />
             <InitialUserPositionCenter position={userPosition} />

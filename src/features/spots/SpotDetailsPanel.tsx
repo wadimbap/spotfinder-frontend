@@ -17,7 +17,7 @@ interface SpotDetailsPanelProps {
     source?: "public" | "own" | "admin";
     onModerated?: (spotId: string) => void;
     onDeleted?: (spotId: string) => void;
-    onEdit?: (spot: SpotResponse) => void;
+    onEdit?: (spot: SpotResponse, user: CurrentUserResponse) => void;
 }
 
 function formatLabel(value: string) {
@@ -31,6 +31,11 @@ export function SpotDetailsPanel({ spot: initialSpot, onClose, source = "public"
     const [retry, setRetry] = useState(0);
     const [currentUser, setCurrentUser] = useState<CurrentUserResponse | null>(null);
     const [accountError, setAccountError] = useState("");
+    const canEdit = Boolean(onEdit && currentUser && (
+        currentUser.role === "MODERATOR"
+        || currentUser.role === "ADMIN"
+        || currentUser.id === spot.createdByUserId
+    ));
 
     useEffect(() => {
         let active = true;
@@ -77,15 +82,15 @@ export function SpotDetailsPanel({ spot: initialSpot, onClose, source = "public"
             {spot.description && <p className="spot-description">{spot.description}</p>}
             <p className="spot-location"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></svg>
                 <span>{spot.latitude}, {spot.longitude}</span></p>
-            {source === "admin" && <SpotLocationMap latitude={spot.latitude} longitude={spot.longitude} spotName={spot.name} />}
-            {!!spot.features.length && <div className="selected-features spot-detail-features" role="group" aria-label="Features">
-                {spot.features.map((feature) => <span key={feature} className="feature-chip-static">{formatLabel(feature)}</span>)}</div>}
+            {(source === "admin" || source === "own") && <SpotLocationMap latitude={spot.latitude} longitude={spot.longitude} spotName={spot.name} />}
+            {(spot.features.length > 0 || canEdit) && <div className="selected-features spot-detail-features" role="group" aria-label="Features">
+                {spot.features.map((feature) => <span key={feature} className="feature-chip-static">{formatLabel(feature)}</span>)}
+                {canEdit && currentUser && <button type="button" className="feature-chip-static spot-edit-chip" onClick={() => onEdit?.(spot, currentUser)}>Edit spot</button>}
+            </div>}
             {accountError && <div role="alert"><p className="error-message">{accountError}</p>
                 <button className="secondary-button" onClick={() => setRetry((value) => value + 1)}>Retry account</button></div>}
             </SpotPhotos>
             <SpotComments key={`comments-${spot.id}`} spotId={spot.id} currentUser={currentUser} />
-            {source === "admin" && onEdit && (currentUser?.role === "MODERATOR" || currentUser?.role === "ADMIN")
-                && <div className="spot-details-section"><button className="secondary-button" onClick={() => onEdit(spot)}>Edit spot</button></div>}
             {source === "admin" && !spot.approved && (currentUser?.role === "MODERATOR" || currentUser?.role === "ADMIN")
                 && <ModerationActions spotId={spot.id} onDone={onModerated ?? (() => onClose())} />}
             <DeleteSpotAction spotId={spot.id} currentUser={currentUser} onDeleted={onDeleted ?? (() => onClose())} />

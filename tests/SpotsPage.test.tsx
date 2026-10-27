@@ -8,7 +8,10 @@ import { spot, user } from "./fixtures";
 
 vi.mock("../src/features/spots/spotsApi", () => ({ spotsApi: { getApprovedSpots: vi.fn(), getMetadata: vi.fn() } }));
 vi.mock("../src/features/auth/authApi", () => ({ authApi: { getCurrentUser: vi.fn() } }));
-vi.mock("../src/features/spots/SpotsMap", () => ({ SpotsMap: ({ spots }: { spots: { name: string }[] }) => <div>{spots.map((item) => item.name).join(", ")}</div> }));
+vi.mock("../src/features/admin/adminSpotsApi", () => ({ adminSpotsApi: { updateSpot: vi.fn() } }));
+vi.mock("../src/features/spots/SpotsMap", () => ({ SpotsMap: ({ spots, onSpotClick }: { spots: typeof spot[]; onSpotClick: (spot: typeof spot) => void }) => <div>{spots.map((item) => <button key={item.id} onClick={() => onSpotClick(item)}>Open {item.name}</button>)}</div> }));
+vi.mock("../src/features/spots/SpotDetailsPanel", () => ({ SpotDetailsPanel: ({ spot, onEdit }: { spot: typeof spot; onEdit: (spot: typeof spot, user: typeof user) => void }) => <button onClick={() => onEdit(spot, { ...user, role: "MODERATOR" })}>Edit spot</button> }));
+vi.mock("../src/features/spots/EditSpotPanel", () => ({ EditSpotPanel: ({ spot, saveSpot }: { spot: typeof spot; saveSpot: (spotId: string, request: object) => Promise<unknown> }) => <button onClick={() => void saveSpot(spot.id, {})}>Save map edit</button> }));
 
 beforeEach(() => {
     vi.resetAllMocks();
@@ -22,7 +25,7 @@ beforeEach(() => {
 it("keeps the map usable when only metadata fails", async () => {
     vi.mocked(spotsApi.getMetadata).mockRejectedValue(new Error("offline"));
     render(<MemoryRouter><SpotsPage /></MemoryRouter>);
-    expect(await screen.findByText(spot.name)).toBeTruthy();
+    expect(await screen.findByRole("button", { name: `Open ${spot.name}` })).toBeTruthy();
     expect(screen.getByText(/Failed to load spot types/)).toBeTruthy();
 });
 
@@ -39,7 +42,7 @@ it("opens ordinary creation directly from the my-spots link", async () => {
 
 it("sends selected map filters to the spots API", async () => {
     render(<MemoryRouter><SpotsPage /></MemoryRouter>);
-    await screen.findByText(spot.name);
+    await screen.findByRole("button", { name: `Open ${spot.name}` });
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
     fireEvent.click(screen.getByRole("checkbox", { name: "Street" }));
     fireEvent.click(screen.getByRole("checkbox", { name: "Rail" }));
@@ -52,11 +55,22 @@ it("sends selected map filters to the spots API", async () => {
 
 it("searches spots by name after typing stops", async () => {
     render(<MemoryRouter><SpotsPage /></MemoryRouter>);
-    await screen.findByText(spot.name);
+    await screen.findByRole("button", { name: `Open ${spot.name}` });
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "central" } });
 
     await waitFor(() => expect(spotsApi.getApprovedSpots).toHaveBeenLastCalledWith({
         query: "central", types: [], features: [],
     }), { timeout: 1000 });
+});
+
+it("uses the moderator endpoint when editing a map marker", async () => {
+    const { adminSpotsApi } = await import("../src/features/admin/adminSpotsApi");
+    vi.mocked(authApi.getCurrentUser).mockResolvedValue({ ...user, role: "MODERATOR" });
+    vi.mocked(adminSpotsApi.updateSpot).mockResolvedValue(spot);
+    render(<MemoryRouter><SpotsPage /></MemoryRouter>);
+    fireEvent.click(await screen.findByRole("button", { name: `Open ${spot.name}` }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit spot" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save map edit" }));
+    await waitFor(() => expect(adminSpotsApi.updateSpot).toHaveBeenCalledWith(spot.id, {}));
 });

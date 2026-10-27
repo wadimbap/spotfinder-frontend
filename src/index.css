@@ -452,7 +452,7 @@ a:hover {
 }
 
 .user-location-control {
-  margin-top: 84px !important;
+  margin-bottom: 84px !important;
 }
 
 .user-location-button {
@@ -1286,6 +1286,8 @@ h1, h2, h3, p { overflow-wrap: anywhere; }
 .spot-location-map { height: 180px; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; }
 .spot-detail-features { margin-top: 0; gap: 7px; }
 .spot-detail-features .feature-chip-static { border-radius: 7px; background: var(--surface-muted); color: var(--text-secondary); }
+.spot-detail-features .spot-edit-chip { border: 1px solid color-mix(in srgb, var(--accent-text) 45%, transparent); background: color-mix(in srgb, var(--accent-soft) 62%, transparent); color: var(--accent-text); cursor: pointer; opacity: 0.8; }
+.spot-detail-features .spot-edit-chip:hover { opacity: 1; background: var(--accent-soft); }
 .spot-gallery { margin-top: 14px; }
 .spot-photos-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
 .spot-photo-item { position: relative; min-width: 0; }
