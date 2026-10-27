@@ -1225,6 +1225,9 @@ h1, h2, h3, p { overflow-wrap: anywhere; }
 .spot-detail-cover { margin-bottom: 12px; }
 .spot-location { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; margin: 10px 0; }
 .spot-location svg { width: 17px; height: 19px; flex-shrink: 0; }
+.spot-location-map-section { margin: 12px 0; }
+.spot-location-map-section h2 { margin: 0 0 8px; font-size: 14px; }
+.spot-location-map { height: 180px; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; }
 .spot-detail-features { margin-top: 0; gap: 7px; }
 .spot-detail-features .feature-chip-static { border-radius: 7px; background: var(--surface-muted); color: var(--text-secondary); }
 .spot-gallery { margin-top: 14px; }

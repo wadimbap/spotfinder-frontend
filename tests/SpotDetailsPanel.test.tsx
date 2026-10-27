@@ -13,6 +13,11 @@ vi.mock("../src/features/spots/spotsApi", () => ({ spotsApi: {
 vi.mock("../src/features/auth/authApi", () => ({ authApi: { getCurrentUser: vi.fn() } }));
 vi.mock("../src/features/admin/adminSpotsApi", () => ({ adminSpotsApi: { getSpot: vi.fn() } }));
 vi.mock("../src/features/comments/commentsApi", () => ({ commentsApi: { getComments: vi.fn() } }));
+vi.mock("../src/features/spots/SpotLocationMap", () => ({
+    SpotLocationMap: ({ latitude, longitude, spotName }: { latitude: number; longitude: number; spotName: string }) => (
+        <div data-testid="spot-location-map">{spotName}: {latitude}, {longitude}</div>
+    ),
+}));
 
 beforeEach(() => {
     vi.resetAllMocks();
@@ -29,6 +34,11 @@ describe("spot details", () => {
         expect(await screen.findByRole("heading", { name: "Pending review" })).toBeTruthy();
         expect(adminSpotsApi.getSpot).toHaveBeenCalledWith(spot.id);
         expect(spotsApi.getApprovedSpot).not.toHaveBeenCalled();
+    });
+    it("shows the reviewed spot location on a map for moderators", async () => {
+        vi.mocked(adminSpotsApi.getSpot).mockResolvedValue({ ...spot, approved: false, name: "Pending review" });
+        render(<SpotDetailsPanel source="admin" spot={{ ...spot, approved: false }} onClose={vi.fn()} />);
+        expect((await screen.findByTestId("spot-location-map")).textContent).toBe(`Pending review: ${spot.latitude}, ${spot.longitude}`);
     });
     it("refreshes approved details before requesting photos", async () => {
         render(<SpotDetailsPanel spot={spot} onClose={vi.fn()} />);
