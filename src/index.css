@@ -449,6 +449,52 @@ a:hover {
   z-index: 1;
 }
 
+.user-location-control {
+  margin-top: 84px !important;
+}
+
+.user-location-button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.user-location-button[aria-pressed="true"] {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+}
+
+.user-location-marker-icon {
+  background: transparent;
+  border: 0;
+}
+
+.user-location-marker {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 3px solid rgb(37 99 235 / 35%);
+  border-radius: 50%;
+  background: rgb(37 99 235 / 16%);
+}
+
+.user-location-marker span {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #2563eb;
+  box-shadow: 0 1px 4px rgb(15 23 42 / 35%);
+}
+
 .spots-panel {
   position: absolute;
   top: 20px;
